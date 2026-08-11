@@ -1,0 +1,28 @@
+# Security policy
+
+Screen Time Roaster Mac contains a root launch daemon. Treat the following as
+repository-wide security invariants:
+
+1. The root daemon must never fetch network content or execute a shell.
+2. Unprivileged configuration must be a regular file owned by the configured
+   user, not writable by group or others, bounded in size, and strictly parsed.
+3. Domain and endpoint strings must never reach a privileged file or process
+   invocation before grammar validation.
+4. `/etc/hosts` edits must be atomic and modify only the exact managed marker
+   section while preserving unrelated content and metadata.
+5. PF changes must remain inside `com.apple/ScreenTimeRoasterMac`; the global
+   ruleset must never be flushed or replaced.
+6. Installer and uninstaller targets must be fixed absolute paths, must reject
+   symlink or non-regular-file substitutions, and must remove enforcement
+   before removing the helper.
+7. A failed or malformed list update must preserve the last validated cache.
+8. Once permanent protection is locked, unprivileged cache or configuration
+   changes must not remove previously accepted domains.
+9. Public release is blocked until tests, real-machine install/uninstall, and
+   a repository security scan pass.
+10. Network blocklist inputs must use the fixed HTTPS host and a reviewed,
+    immutable upstream revision; advancing that revision requires a security
+    review.
+
+Report suspected vulnerabilities privately to the repository owner until a
+public security contact is established.
