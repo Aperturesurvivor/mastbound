@@ -23,6 +23,10 @@ repository-wide security invariants:
 10. Network blocklist inputs must use the fixed HTTPS host and a reviewed,
     immutable upstream revision; advancing that revision requires a security
     review.
+11. App-bundle verification and helper extraction must occur only in a
+    root-owned directory that is not writable by group or others.
+12. Internal enforcement state containing domains, endpoints, or PF tokens
+    must be root-readable only; user-visible status must not expose it.
 
 Report suspected vulnerabilities privately to the repository owner until a
 public security contact is established.

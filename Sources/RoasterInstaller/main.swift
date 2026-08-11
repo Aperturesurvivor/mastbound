@@ -85,7 +85,6 @@ private enum Installer {
             from: request.appBundle,
             expectedCDHash: request.expectedBundleCDHash
         )
-        try installHelper(from: installedApp.appendingPathComponent("Contents/Resources/RoasterEnforcer"))
         try writeLaunchDaemon(
             configURL: configURL,
             blocklistURL: blocklistURL,
@@ -182,17 +181,23 @@ private enum Installer {
               (sourceStat.st_mode & S_IFMT) == S_IFDIR else {
             throw InstallerError.unsafeSource("The app bundle source is not a regular directory.")
         }
-        if source == installedApp {
-            try setRootOwnershipRecursively(installedApp)
-            try validateInstalledExecutables(in: installedApp)
-            try verifySignature(installedApp, expectedCDHash: expectedCDHash)
-            return
+        let protectedStagingDirectory = helper.deletingLastPathComponent()
+        try FileManager.default.createDirectory(
+            at: protectedStagingDirectory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o755]
+        )
+        var stagingDirectoryStat = stat()
+        guard lstat(protectedStagingDirectory.path, &stagingDirectoryStat) == 0,
+              (stagingDirectoryStat.st_mode & S_IFMT) == S_IFDIR,
+              stagingDirectoryStat.st_uid == 0,
+              (stagingDirectoryStat.st_mode & 0o022) == 0 else {
+            throw InstallerError.unsafeSource("The protected staging directory has unsafe permissions.")
         }
-
-        let staging = installedApp.deletingLastPathComponent().appendingPathComponent(
+        let staging = protectedStagingDirectory.appendingPathComponent(
             ".Screen Time Roaster Mac.install.\(getpid()).app"
         )
-        let backup = installedApp.deletingLastPathComponent().appendingPathComponent(
+        let backup = protectedStagingDirectory.appendingPathComponent(
             ".Screen Time Roaster Mac.backup.\(getpid()).app"
         )
         try removeExactDirectoryIfPresent(staging)
@@ -202,6 +207,9 @@ private enum Installer {
             try setRootOwnershipRecursively(staging)
             try validateInstalledExecutables(in: staging)
             try verifySignature(staging, expectedCDHash: expectedCDHash)
+            try installHelper(
+                from: staging.appendingPathComponent("Contents/Resources/RoasterEnforcer")
+            )
 
             var movedExistingAside = false
             if FileManager.default.fileExists(atPath: installedApp.path) {
@@ -225,9 +233,7 @@ private enum Installer {
     }
 
     private static func setRootOwnershipRecursively(_ root: URL) throws {
-        guard lchown(root.path, 0, 0) == 0 else {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
-        }
+        try hardenOwnershipAndMode(root)
         var enumerationError: Error?
         guard let enumerator = FileManager.default.enumerator(
             at: root,
@@ -241,11 +247,22 @@ private enum Installer {
             throw InstallerError.unsafeSource("Could not enumerate the installed app bundle.")
         }
         for case let itemURL as URL in enumerator {
-            guard lchown(itemURL.path, 0, 0) == 0 else {
-                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
-            }
+            try hardenOwnershipAndMode(itemURL)
         }
         if let enumerationError { throw enumerationError }
+    }
+
+    private static func hardenOwnershipAndMode(_ url: URL) throws {
+        var fileStat = stat()
+        guard lstat(url.path, &fileStat) == 0,
+              lchown(url.path, 0, 0) == 0 else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        guard (fileStat.st_mode & S_IFMT) != S_IFLNK else { return }
+        let hardenedMode = mode_t(fileStat.st_mode & 0o777 & ~0o022)
+        guard chmod(url.path, hardenedMode) == 0 else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
     }
 
     private static func validateInstalledExecutables(in appBundle: URL) throws {

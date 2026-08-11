@@ -29,6 +29,8 @@ only through the administrator-authorized uninstall path.
 The adult-domain sources are pinned to a reviewed StevenBlack repository
 revision. Updating that revision is deliberately a code-review and release
 action; a routine in-app refresh cannot silently switch to newer upstream data.
+Both the downloader and root service require the reviewed domain count and
+SHA-256 before accepting that cache.
 
 ## Build and run
 
@@ -45,11 +47,15 @@ must survive app closure and reboot.
 
 - The root service accepts only strict domains and literal IP addresses.
 - It executes no user-controlled shell commands and never downloads data.
+- Privileged installation stages and verifies the app only in a root-owned,
+  non-group-writable directory before copying the helper.
 - Hosts-file edits are atomic and preserve every line outside its markers.
 - PF rules are loaded into one isolated anchor; the global ruleset is not
   replaced.
 - Invalid configuration preserves existing enforcement instead of rewriting
   system files from ambiguous input.
+- Internal enforcement state, including private endpoints, is root-readable
+  only.
 - Uninstall clears both owned enforcement surfaces before removing the daemon.
 
 See [SECURITY.md](SECURITY.md) for the privileged-boundary policy.

@@ -175,6 +175,7 @@ private final class Runtime {
                 at: options.adultBlocklistURL,
                 expectedOwner: options.expectedUserID
             )
+            try ReviewedAdultBlocklist.validate(userDomains)
             let systemDomains: [String]
             if FileManager.default.fileExists(atPath: RoasterPaths.systemAdultBlocklistURL.path) {
                 systemDomains = try SecureFileIO.readAdultBlocklist(

@@ -44,6 +44,8 @@ struct ContentView: View {
                             systemImage: "lock.fill"
                         )
                     }
+                } else if model.isInstalled {
+                    Label("Internal enforcement details are private to the root service", systemImage: "lock.shield")
                 } else {
                     Label("No scheduled rule is active right now", systemImage: "clock")
                 }
@@ -61,7 +63,7 @@ struct ContentView: View {
         GroupBox("Permanent adult-content protection") {
             VStack(alignment: .leading, spacing: 12) {
                 Toggle("Keep the validated adult-domain list blocked at all times", isOn: $model.configuration.permanentProtection.enabled)
-                    .disabled(model.enforcementState?.permanentProtectionLocked == true)
+                    .disabled(model.permanentProtectionIsLocked)
                 if let metadata = model.metadata {
                     Text("\(metadata.domainCount.formatted()) domains cached · updated \(metadata.fetchedAt.formatted(date: .abbreviated, time: .shortened))")
                         .font(.callout)
@@ -81,7 +83,7 @@ struct ContentView: View {
                 Text("Downloads happen in the unprivileged app. The root service never accesses the internet and accepts only strict domain syntax from the local cache.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                if model.enforcementState?.permanentProtectionLocked == true {
+                if model.permanentProtectionIsLocked {
                     Text("Protection is locked and additive. Removing it requires the administrator-authorized enforcement uninstall.")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.green)

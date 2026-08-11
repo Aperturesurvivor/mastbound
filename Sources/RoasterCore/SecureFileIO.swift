@@ -86,7 +86,7 @@ public enum SecureFileIO {
             throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
         }
         let data = try JSONEncoder.roaster.encode(state)
-        try writeAtomically(data: data, to: url, mode: 0o644, owner: 0, group: 0)
+        try writeAtomically(data: data, to: url, mode: 0o600, owner: 0, group: 0)
     }
 
     public static func removeState(at url: URL) throws {

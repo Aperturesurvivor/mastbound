@@ -1,9 +1,25 @@
+import CryptoKit
 import Foundation
 
-public struct AdultBlocklistSource: Codable, Equatable, Sendable {
-    // Reviewed StevenBlack snapshot. Updating this pin is a release/security-review action.
-    private static let reviewedRevision = "92a38fd106abe49f50ed6904ff0e867f4eb44f9f"
+public enum ReviewedAdultBlocklist {
+    public static let revision = "92a38fd106abe49f50ed6904ff0e867f4eb44f9f"
+    public static let domainCount = 76_744
+    public static let sha256 = "6113a8bd81f45149e586f23e5cb33b03a5a24ef9d32d196877c54dd333d2f0b3"
 
+    @discardableResult
+    public static func validate(_ domains: [String]) throws -> Data {
+        let serialized = try AdultBlocklistParser.serialize(domains)
+        let digest = SHA256.hash(data: serialized).map { String(format: "%02x", $0) }.joined()
+        guard domains.count == domainCount, digest == sha256 else {
+            throw RoasterError.unsafeFile(
+                "The adult-domain cache does not match the reviewed release snapshot."
+            )
+        }
+        return serialized
+    }
+}
+
+public struct AdultBlocklistSource: Codable, Equatable, Sendable {
     public var name: String
     public var url: URL
     public var homepage: URL
@@ -34,7 +50,7 @@ public struct AdultBlocklistSource: Codable, Equatable, Sendable {
         AdultBlocklistSource(
             name: name,
             url: URL(
-                string: "https://raw.githubusercontent.com/StevenBlack/hosts/\(reviewedRevision)/extensions/porn/\(folder)/hosts"
+                string: "https://raw.githubusercontent.com/StevenBlack/hosts/\(ReviewedAdultBlocklist.revision)/extensions/porn/\(folder)/hosts"
             )!,
             homepage: URL(string: homepage)!,
             license: license

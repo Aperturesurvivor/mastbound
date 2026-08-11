@@ -23,3 +23,9 @@ import Testing
     #expect(rules.contains("to 192.0.2.10 port = 8096"))
     #expect(!rules.contains("anchor \"*\""))
 }
+
+@Test func reviewedAdultListRejectsIncompleteCache() {
+    #expect(throws: (any Error).self) {
+        try ReviewedAdultBlocklist.validate(["adult.example"])
+    }
+}

@@ -28,7 +28,7 @@ public actor AdultBlocklistDownloader {
         }
 
         let domains = merged.sorted()
-        let serialized = try AdultBlocklistParser.serialize(domains)
+        let serialized = try ReviewedAdultBlocklist.validate(domains)
         let digest = SHA256.hash(data: serialized).map { String(format: "%02x", $0) }.joined()
         let metadata = AdultBlocklistMetadata(
             fetchedAt: Date(),
@@ -59,7 +59,9 @@ public actor AdultBlocklistDownloader {
         }
 
         var data = Data()
-        data.reserveCapacity(min(Int(response.expectedContentLength), AdultBlocklistParser.maximumSourceBytes))
+        data.reserveCapacity(
+            max(0, min(Int(response.expectedContentLength), AdultBlocklistParser.maximumSourceBytes))
+        )
         for try await byte in bytes {
             guard data.count < AdultBlocklistParser.maximumSourceBytes else {
                 throw RoasterError.configurationTooLarge

@@ -22,6 +22,11 @@ final class AppModel: ObservableObject {
         )
     }
 
+    var permanentProtectionIsLocked: Bool {
+        enforcementState?.permanentProtectionLocked == true
+            || (isInstalled && configuration.permanentProtection.enabled)
+    }
+
     func start() async {
         do {
             if FileManager.default.fileExists(atPath: configURL.path) {
