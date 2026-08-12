@@ -267,7 +267,7 @@ private enum Installer {
 
     private static func validateInstalledExecutables(in appBundle: URL) throws {
         try validateRegularExecutable(appBundle.appendingPathComponent("Contents/MacOS/RoasterMac"))
-        for name in ["RoasterEnforcer", "RoasterBlocklist", "RoasterInstaller"] {
+        for name in ["RoasterEnforcer", "RoasterBlocklist", "RoasterInstaller", "RoasterToolFetch"] {
             try validateRegularExecutable(appBundle.appendingPathComponent("Contents/Resources/\(name)"))
         }
     }

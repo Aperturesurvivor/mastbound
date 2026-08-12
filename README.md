@@ -17,6 +17,8 @@ send browsing data anywhere.
 - `RoasterBlocklist`: unprivileged adult-list downloader and validator.
 - `RoasterInstaller`: administrator-authorized, fixed-path installer and
   uninstaller.
+- `RoasterToolFetch`: a narrow Codex-only HTTPS fetch lane for domains that the
+  evening schedule blocks locally.
 - `RoasterCore`: schedule, validation, policy, hosts editing, and PF rendering.
 
 Exact domains are blocked through one clearly marked `/etc/hosts` section.
@@ -32,11 +34,28 @@ action; a routine in-app refresh cannot silently switch to newer upstream data.
 Both the downloader and root service require the reviewed domain count and
 SHA-256 before accepting that cache.
 
+The hosts file is system-wide, so it cannot distinguish Safari from a local
+Codex subprocess. `RoasterToolFetch` provides that distinction without weakening
+the browser block. It runs only when an ancestor belongs to OpenAI's signed
+Codex app, accepts only HTTPS URLs on the exact scheduled social domains, and
+does not accept cookies, uploads, custom curl flags, or cross-site redirects.
+It uses Cloudflare DNS-over-HTTPS for the requested hostname; the root service
+and normal browsing never use that lane.
+
+From a Codex tool process:
+
+```sh
+roaster-tool-fetch 'https://www.youtube.com/watch?v=example'
+```
+
+The install script links that command into `~/.local/bin`, which Codex includes
+in its command path. Direct browser and terminal requests remain blocked.
+
 ## Build and run
 
 ```sh
 ./script/build_and_run.sh --verify
-swift test
+./script/test.sh
 ```
 
 The build script stages and ad-hoc signs `dist/Screen Time Roaster Mac.app`.
@@ -56,6 +75,9 @@ must survive app closure and reboot.
   system files from ambiguous input.
 - Internal enforcement state, including private endpoints, is root-readable
   only.
+- The optional tool lane is unprivileged, read-only, domain-scoped, and never
+  changes enforcement state. Its ancestry check is deliberate habit friction,
+  not a security boundary against the logged-in user.
 - Uninstall clears both owned enforcement surfaces before removing the daemon.
 
 See [SECURITY.md](SECURITY.md) for the privileged-boundary policy.

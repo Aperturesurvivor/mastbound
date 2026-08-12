@@ -11,6 +11,7 @@ let package = Package(
         .executable(name: "RoasterEnforcer", targets: ["RoasterEnforcer"]),
         .executable(name: "RoasterBlocklist", targets: ["RoasterBlocklist"]),
         .executable(name: "RoasterInstaller", targets: ["RoasterInstaller"]),
+        .executable(name: "RoasterToolFetch", targets: ["RoasterToolFetch"]),
     ],
     targets: [
         .target(name: "RoasterCore"),
@@ -28,6 +29,10 @@ let package = Package(
         ),
         .executableTarget(
             name: "RoasterInstaller",
+            dependencies: ["RoasterCore"]
+        ),
+        .executableTarget(
+            name: "RoasterToolFetch",
             dependencies: ["RoasterCore"]
         ),
         .testTarget(

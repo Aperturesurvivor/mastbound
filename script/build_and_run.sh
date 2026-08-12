@@ -35,8 +35,10 @@ esac
 /bin/cp "$BUILD_DIR/RoasterEnforcer" "$APP_RESOURCES/RoasterEnforcer"
 /bin/cp "$BUILD_DIR/RoasterBlocklist" "$APP_RESOURCES/RoasterBlocklist"
 /bin/cp "$BUILD_DIR/RoasterInstaller" "$APP_RESOURCES/RoasterInstaller"
+/bin/cp "$BUILD_DIR/RoasterToolFetch" "$APP_RESOURCES/RoasterToolFetch"
 /bin/chmod 0755 "$APP_MACOS/RoasterMac" "$APP_RESOURCES/RoasterEnforcer" \
-  "$APP_RESOURCES/RoasterBlocklist" "$APP_RESOURCES/RoasterInstaller"
+  "$APP_RESOURCES/RoasterBlocklist" "$APP_RESOURCES/RoasterInstaller" \
+  "$APP_RESOURCES/RoasterToolFetch"
 
 /usr/bin/python3 - "$INFO_PLIST" "$PROCESS_NAME" "$BUNDLE_ID" "$APP_NAME" "$MIN_SYSTEM_VERSION" <<'PY'
 import plistlib
@@ -64,6 +66,7 @@ PY
 /usr/bin/codesign --force --sign - --timestamp=none "$APP_RESOURCES/RoasterEnforcer"
 /usr/bin/codesign --force --sign - --timestamp=none "$APP_RESOURCES/RoasterBlocklist"
 /usr/bin/codesign --force --sign - --timestamp=none "$APP_RESOURCES/RoasterInstaller"
+/usr/bin/codesign --force --sign - --timestamp=none "$APP_RESOURCES/RoasterToolFetch"
 /usr/bin/codesign --force --sign - --timestamp=none "$APP_BUNDLE"
 
 open_app() {

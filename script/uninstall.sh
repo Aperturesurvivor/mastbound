@@ -2,6 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
+TOOL_TARGET="/Applications/Screen Time Roaster Mac.app/Contents/Resources/RoasterToolFetch"
 INSTALLER="$ROOT_DIR/dist/Screen Time Roaster Mac.app/Contents/Resources/RoasterInstaller"
 if [[ ! -x "$INSTALLER" ]]; then
   INSTALLER="/Applications/Screen Time Roaster Mac.app/Contents/Resources/RoasterInstaller"
@@ -21,3 +23,7 @@ on run argv
     return do shell script commandText with administrator privileges
 end run
 APPLESCRIPT
+
+if [[ -L "$TOOL_LINK" && "$(/usr/bin/readlink "$TOOL_LINK")" == "$TOOL_TARGET" ]]; then
+  /bin/rm "$TOOL_LINK"
+fi

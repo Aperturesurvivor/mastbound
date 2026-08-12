@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_BUNDLE="$ROOT_DIR/dist/Screen Time Roaster Mac.app"
 INSTALLER="$APP_BUNDLE/Contents/Resources/RoasterInstaller"
+TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
+TOOL_TARGET="/Applications/Screen Time Roaster Mac.app/Contents/Resources/RoasterToolFetch"
 
 if [[ ! -x "$INSTALLER" ]]; then
   "$ROOT_DIR/script/build_and_run.sh" --verify
@@ -29,3 +31,10 @@ on run argv
     return do shell script commandText with administrator privileges
 end run
 APPLESCRIPT
+
+if [[ -L "$TOOL_LINK" || ! -e "$TOOL_LINK" ]]; then
+  /bin/mkdir -p "$HOME/.local/bin"
+  /bin/ln -sfn "$TOOL_TARGET" "$TOOL_LINK"
+else
+  echo "Installed the app, but preserved the existing non-symlink at $TOOL_LINK." >&2
+fi

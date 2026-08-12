@@ -27,6 +27,9 @@ repository-wide security invariants:
     root-owned directory that is not writable by group or others.
 12. Internal enforcement state containing domains, endpoints, or PF tokens
     must be root-readable only; user-visible status must not expose it.
+13. The unprivileged Codex fetch lane must accept only normalized HTTPS URLs on
+    the scheduled domain allowlist, disable curl configuration and proxy
+    inheritance, refuse redirect following, and never modify blocker state.
 
 Report suspected vulnerabilities privately to the repository owner until a
 public security contact is established.
