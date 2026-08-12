@@ -2,10 +2,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_BUNDLE="$ROOT_DIR/dist/Screen Time Roaster Mac.app"
+APP_BUNDLE="$ROOT_DIR/dist/Screen Time Roaster.app"
 INSTALLER="$APP_BUNDLE/Contents/Resources/RoasterInstaller"
 TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
-TOOL_TARGET="/Applications/Screen Time Roaster Mac.app/Contents/Resources/RoasterToolFetch"
+TOOL_TARGET="/Applications/Screen Time Roaster.app/Contents/Resources/RoasterToolFetch"
 
 if [[ ! -x "$INSTALLER" ]]; then
   "$ROOT_DIR/script/build_and_run.sh" --verify

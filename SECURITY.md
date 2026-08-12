@@ -1,7 +1,7 @@
 # Security policy
 
-Screen Time Roaster Mac contains a root launch daemon. Treat the following as
-repository-wide security invariants:
+Screen Time Roaster for macOS contains a root launch daemon. Treat the
+following as repository-wide security invariants:
 
 1. The root daemon must never fetch network content or execute a shell.
 2. Unprivileged configuration must be a regular file owned by the configured

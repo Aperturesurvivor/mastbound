@@ -7,7 +7,7 @@ struct RoasterMacApp: App {
     @StateObject private var model = AppModel()
 
     var body: some Scene {
-        WindowGroup("Screen Time Roaster Mac") {
+        WindowGroup("Screen Time Roaster") {
             ContentView(model: model)
                 .frame(minWidth: 760, minHeight: 680)
                 .task { await model.start() }

@@ -61,7 +61,8 @@ private struct InstallRequest {
 }
 
 private enum Installer {
-    static let installedApp = URL(fileURLWithPath: "/Applications/Screen Time Roaster Mac.app")
+    static let installedApp = URL(fileURLWithPath: "/Applications/Screen Time Roaster.app")
+    static let legacyInstalledApp = URL(fileURLWithPath: "/Applications/Screen Time Roaster Mac.app")
     static let helper = URL(fileURLWithPath: "/Library/PrivilegedHelperTools/RoasterEnforcer")
     static let launchDaemon = URL(
         fileURLWithPath: "/Library/LaunchDaemons/\(RoasterPaths.launchDaemonLabel).plist"
@@ -195,10 +196,10 @@ private enum Installer {
             throw InstallerError.unsafeSource("The protected staging directory has unsafe permissions.")
         }
         let staging = protectedStagingDirectory.appendingPathComponent(
-            ".Screen Time Roaster Mac.install.\(getpid()).app"
+            ".Screen Time Roaster.install.\(getpid()).app"
         )
         let backup = protectedStagingDirectory.appendingPathComponent(
-            ".Screen Time Roaster Mac.backup.\(getpid()).app"
+            ".Screen Time Roaster.backup.\(getpid()).app"
         )
         try removeExactDirectoryIfPresent(staging)
         try removeExactDirectoryIfPresent(backup)
@@ -226,6 +227,7 @@ private enum Installer {
                 throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
             }
             try removeExactDirectoryIfPresent(backup)
+            try removeExactDirectoryIfPresent(legacyInstalledApp)
         } catch {
             try? removeExactDirectoryIfPresent(staging)
             throw error
@@ -389,10 +391,10 @@ private struct RoasterInstallerCommand {
             case "install":
                 let request = try InstallRequest.parse(Array(CommandLine.arguments.dropFirst(2)))
                 try Installer.install(request)
-                print("Screen Time Roaster Mac installed and enforcement started.")
+                print("Screen Time Roaster installed and enforcement started.")
             case "uninstall":
                 try Installer.uninstall()
-                print("Screen Time Roaster Mac enforcement removed.")
+                print("Screen Time Roaster enforcement removed.")
             default:
                 throw InstallerError.invalidArguments("Expected install or uninstall.")
             }

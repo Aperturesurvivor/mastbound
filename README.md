@@ -1,4 +1,6 @@
-# Screen Time Roaster Mac
+# Screen Time Roaster for macOS
+
+<img src="Assets/AppIcon-1024.png" alt="Screen Time Roaster app icon" width="128">
 
 A local-only macOS blocker with recurring schedules and a permanent
 adult-content protection list. It is the Mac companion to the iPhone Screen
@@ -7,8 +9,10 @@ Time Roaster project.
 ## Current state
 
 This repository is under local safety validation and is not yet a supported
-public release. The implementation has no package dependencies and does not
-send browsing data anywhere.
+public release. The implementation has no package dependencies. Normal browser
+traffic is never observed; the optional Codex tool lane sends only its explicit
+fetches and DNS lookups to the requested service and configured DNS-over-HTTPS
+resolver.
 
 ## Architecture
 
@@ -58,7 +62,7 @@ in its command path. Direct browser and terminal requests remain blocked.
 ./script/test.sh
 ```
 
-The build script stages and ad-hoc signs `dist/Screen Time Roaster Mac.app`.
+The build script stages and ad-hoc signs `dist/Screen Time Roaster.app`.
 The local install flow requires an administrator prompt because enforcement
 must survive app closure and reboot.
 

@@ -3,10 +3,10 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
-TOOL_TARGET="/Applications/Screen Time Roaster Mac.app/Contents/Resources/RoasterToolFetch"
-INSTALLER="$ROOT_DIR/dist/Screen Time Roaster Mac.app/Contents/Resources/RoasterInstaller"
+TOOL_TARGET="/Applications/Screen Time Roaster.app/Contents/Resources/RoasterToolFetch"
+INSTALLER="$ROOT_DIR/dist/Screen Time Roaster.app/Contents/Resources/RoasterInstaller"
 if [[ ! -x "$INSTALLER" ]]; then
-  INSTALLER="/Applications/Screen Time Roaster Mac.app/Contents/Resources/RoasterInstaller"
+  INSTALLER="/Applications/Screen Time Roaster.app/Contents/Resources/RoasterInstaller"
 fi
 INSTALLER_HASH="$(/usr/bin/shasum -a 256 "$INSTALLER" | /usr/bin/awk '{print $1}')"
 if [[ ! "$INSTALLER_HASH" =~ ^[0-9a-f]{64}$ ]]; then

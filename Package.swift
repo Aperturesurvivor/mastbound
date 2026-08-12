@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "ScreenTimeRoasterMac",
+    name: "ScreenTimeRoaster",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "RoasterCore", targets: ["RoasterCore"]),

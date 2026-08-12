@@ -1,3 +1,4 @@
+import AppKit
 import RoasterCore
 import SwiftUI
 
@@ -22,12 +23,29 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Screen Time Roaster Mac")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-            Text("Automatic, local-only boundaries that close the device-shift loophole.")
-                .foregroundStyle(.secondary)
+        HStack(spacing: 16) {
+            if let appIcon {
+                Image(nsImage: appIcon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 68, height: 68)
+                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    .accessibilityHidden(true)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Screen Time Roaster")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                Text("Automatic, local-only boundaries that close the device-shift loophole.")
+                    .foregroundStyle(.secondary)
+            }
         }
+    }
+
+    private var appIcon: NSImage? {
+        guard let iconURL = Bundle.main.url(forResource: "AppIcon", withExtension: "icns") else {
+            return nil
+        }
+        return NSImage(contentsOf: iconURL)
     }
 
     private var statusCard: some View {
