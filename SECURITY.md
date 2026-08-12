@@ -31,5 +31,5 @@ following as repository-wide security invariants:
     the scheduled domain allowlist, disable curl configuration and proxy
     inheritance, refuse redirect following, and never modify blocker state.
 
-Report suspected vulnerabilities privately to the repository owner until a
-public security contact is established.
+Report suspected vulnerabilities privately through a
+[GitHub security advisory](https://github.com/Aperturesurvivor/Screen-Time-Roaster/security/advisories/new).

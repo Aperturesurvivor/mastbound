@@ -8,11 +8,16 @@ Time Roaster project.
 
 ## Current state
 
-This repository is under local safety validation and is not yet a supported
-public release. The implementation has no package dependencies. Normal browser
-traffic is never observed; the optional Codex tool lane sends only its explicit
-fetches and DNS lookups to the requested service and configured DNS-over-HTTPS
-resolver.
+This is an early public source release for macOS 14 and later. The
+implementation has no package dependencies. Normal browser traffic is never
+observed; the optional Codex tool lane sends only its explicit fetches and DNS
+lookups to the requested service and configured DNS-over-HTTPS resolver.
+
+The initial public build passed 17 Swift tests, deep code-signature
+verification, a real-machine install and path-migration check, launch-daemon
+and permanent-block checks, and a complete security review with no reportable
+findings. It is still intentionally a source-first release rather than a
+notarized downloadable package.
 
 ## Architecture
 
@@ -65,6 +70,18 @@ in its command path. Direct browser and terminal requests remain blocked.
 The build script stages and ad-hoc signs `dist/Screen Time Roaster.app`.
 The local install flow requires an administrator prompt because enforcement
 must survive app closure and reboot.
+
+To install the built app and start enforcement:
+
+```sh
+./script/install.sh
+```
+
+To remove the app and its owned enforcement state:
+
+```sh
+./script/uninstall.sh
+```
 
 ## Safety properties
 
