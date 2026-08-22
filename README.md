@@ -83,6 +83,44 @@ To remove the app and its owned enforcement state:
 ./script/uninstall.sh
 ```
 
+## Release packaging
+
+`script/package_release.sh` creates a universal arm64 and x86_64 release app
+and ZIP archive without installing or publishing either artifact. It never
+selects a signing identity or notarization credentials implicitly.
+
+For a local unsigned packaging check:
+
+```sh
+./script/package_release.sh --unsigned
+```
+
+For a Developer ID release build, pass the exact identity explicitly:
+
+```sh
+./script/package_release.sh \
+  --sign-identity "Developer ID Application: Your Name (TEAMID)" \
+  --version 1.0.0 \
+  --build-number 1
+```
+
+That path applies the hardened runtime and a secure timestamp, then performs a
+deep strict code-signature verification. It does not contact Apple's notary
+service. To notarize, first create a `notarytool` keychain profile outside this
+repository, then opt in with its profile name:
+
+```sh
+./script/package_release.sh \
+  --sign-identity "Developer ID Application: Your Name (TEAMID)" \
+  --notary-profile "screen-time-roaster-release"
+```
+
+Only `--notary-profile` initiates notarization. The script does not accept or
+store raw Apple credentials. After acceptance it staples and validates the app,
+requires Gatekeeper assessment to pass, and recreates the ZIP with the stapled
+bundle. Release artifacts remain under ignored `dist/release/` until a separate,
+explicit publication step.
+
 ## Safety properties
 
 - The root service accepts only strict domains and literal IP addresses.
