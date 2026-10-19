@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -d /Applications/Xcode.app/Contents/Developer ]]; then
-  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+DEVELOPER_ROOT="/Applications/Xcode.app/Contents/Developer"
+if [[ ! -x "$DEVELOPER_ROOT/usr/bin/xcodebuild" ]]; then
+  echo "Full Xcode with the macOS SDK is required. Restore Xcode.app in /Applications, launch it once to finish installing components, then retry." >&2
+  exit 1
+fi
+export DEVELOPER_DIR="$DEVELOPER_ROOT"
+if ! /usr/bin/xcrun --sdk macosx --show-sdk-path >/dev/null 2>&1; then
+  echo "Full Xcode with the macOS SDK is required. Restore Xcode.app in /Applications, launch it once to finish installing components, then retry." >&2
+  exit 1
 fi
 
 MODE="${1:-run}"
-APP_NAME="Screen Time Roaster"
+APP_NAME="Mastbound"
 PROCESS_NAME="RoasterMac"
 BUNDLE_ID="com.josiahwilson.ScreenTimeRoasterMac"
 MIN_SYSTEM_VERSION="14.0"
@@ -14,7 +21,10 @@ MIN_SYSTEM_VERSION="14.0"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
-LEGACY_APP_BUNDLE="$DIST_DIR/Screen Time Roaster Mac.app"
+LEGACY_APP_BUNDLES=(
+  "$DIST_DIR/Screen Time Roaster.app"
+  "$DIST_DIR/Screen Time Roaster Mac.app"
+)
 APP_CONTENTS="$APP_BUNDLE/Contents"
 APP_MACOS="$APP_CONTENTS/MacOS"
 APP_RESOURCES="$APP_CONTENTS/Resources"
@@ -32,10 +42,12 @@ case "$APP_BUNDLE" in
   *) echo "Refusing to replace unexpected app path: $APP_BUNDLE" >&2; exit 1 ;;
 esac
 /bin/rm -rf "$APP_BUNDLE"
-case "$LEGACY_APP_BUNDLE" in
-  "$ROOT_DIR"/dist/*.app) /bin/rm -rf "$LEGACY_APP_BUNDLE" ;;
-  *) echo "Refusing to remove unexpected legacy app path: $LEGACY_APP_BUNDLE" >&2; exit 1 ;;
-esac
+for legacy_app_bundle in "${LEGACY_APP_BUNDLES[@]}"; do
+  case "$legacy_app_bundle" in
+    "$ROOT_DIR"/dist/*.app) /bin/rm -rf "$legacy_app_bundle" ;;
+    *) echo "Refusing to remove unexpected legacy app path: $legacy_app_bundle" >&2; exit 1 ;;
+  esac
+done
 /bin/mkdir -p "$APP_MACOS" "$APP_RESOURCES"
 /bin/cp "$BUILD_DIR/RoasterMac" "$APP_MACOS/RoasterMac"
 /bin/cp "$BUILD_DIR/RoasterEnforcer" "$APP_RESOURCES/RoasterEnforcer"

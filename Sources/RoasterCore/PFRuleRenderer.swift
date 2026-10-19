@@ -6,7 +6,7 @@ public enum PFRuleRenderer {
         let endpoints = try TargetValidator.normalize(endpoints)
         guard !endpoints.isEmpty else { return "" }
         var lines = [
-            "# Screen Time Roaster — generated rules",
+            "# Mastbound — generated rules",
             "# Loaded only into the com.apple/ScreenTimeRoasterMac anchor.",
         ]
         for endpoint in endpoints {

@@ -26,9 +26,9 @@ EOF
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_DIR="$ROOT_DIR/dist/release"
-APP_NAME="Screen Time Roaster"
+APP_NAME="Mastbound"
 APP_BUNDLE="$OUTPUT_DIR/$APP_NAME.app"
-ZIP_ARCHIVE="$OUTPUT_DIR/Screen-Time-Roaster.zip"
+ZIP_ARCHIVE="$OUTPUT_DIR/Mastbound.zip"
 APP_CONTENTS="$APP_BUNDLE/Contents"
 APP_MACOS="$APP_CONTENTS/MacOS"
 APP_RESOURCES="$APP_CONTENTS/Resources"
@@ -106,8 +106,15 @@ if [[ ! -f "$APP_ICON_SOURCE" ]]; then
   exit 1
 fi
 
-if [[ -d /Applications/Xcode.app/Contents/Developer ]]; then
-  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+DEVELOPER_ROOT="/Applications/Xcode.app/Contents/Developer"
+if [[ ! -x "$DEVELOPER_ROOT/usr/bin/xcodebuild" ]]; then
+  echo "Full Xcode with the macOS SDK is required. Restore Xcode.app in /Applications, launch it once to finish installing components, then retry." >&2
+  exit 1
+fi
+export DEVELOPER_DIR="$DEVELOPER_ROOT"
+if ! /usr/bin/xcrun --sdk macosx --show-sdk-path >/dev/null 2>&1; then
+  echo "Full Xcode with the macOS SDK is required. Restore Xcode.app in /Applications, launch it once to finish installing components, then retry." >&2
+  exit 1
 fi
 
 SWIFT_BIN="$(/usr/bin/xcrun --find swift)"

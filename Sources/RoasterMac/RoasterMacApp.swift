@@ -7,13 +7,21 @@ struct RoasterMacApp: App {
     @StateObject private var model = AppModel()
 
     var body: some Scene {
-        WindowGroup("Screen Time Roaster") {
+        WindowGroup("Mastbound") {
             ContentView(model: model)
                 .frame(minWidth: 760, minHeight: 680)
                 .task { await model.start() }
         }
         .defaultSize(width: 860, height: 780)
         .windowResizability(.contentMinSize)
+        .commands {
+            CommandGroup(replacing: .appTermination) {
+                Button("Hide Mastbound Interface") {
+                    NSApp.hide(nil)
+                }
+                .keyboardShortcut("q")
+            }
+        }
     }
 }
 

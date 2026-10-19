@@ -94,7 +94,7 @@ private final class Runtime {
             expectedOwner: 0
         )
         flushDNSCaches()
-        logger.notice("All Screen Time Roaster enforcement was removed.")
+        logger.notice("All Mastbound enforcement was removed.")
     }
 
     private func reconcile() throws {

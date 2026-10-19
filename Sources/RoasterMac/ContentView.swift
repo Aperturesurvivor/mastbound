@@ -33,9 +33,9 @@ struct ContentView: View {
                     .accessibilityHidden(true)
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("Screen Time Roaster")
+                Text("Mastbound")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
-                Text("Automatic, local-only boundaries that close the device-shift loophole.")
+                Text("Hold fast to the life you chose.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -71,6 +71,11 @@ struct ContentView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
+                if model.isInstalled {
+                    Text("Closing or quitting this interface does not stop protection. Only administrator-authorized removal stops the enforcement service.")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.green)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(6)

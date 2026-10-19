@@ -1,10 +1,10 @@
-# Screen Time Roaster for macOS
+# Mastbound for macOS
 
-<img src="Assets/AppIcon-1024.png" alt="Screen Time Roaster app icon" width="128">
+<img src="Assets/AppIcon-1024.png" alt="Mastbound app icon" width="128">
 
 A local-only macOS blocker with recurring schedules and a permanent
-adult-content protection list. It is the Mac companion to the iPhone Screen
-Time Roaster project.
+adult-content protection list. It is the Mac companion to the iPhone Mastbound
+project.
 
 ## Current state
 
@@ -54,11 +54,12 @@ and normal browsing never use that lane.
 From a Codex tool process:
 
 ```sh
-roaster-tool-fetch 'https://www.youtube.com/watch?v=example'
+mastbound-tool-fetch 'https://www.youtube.com/watch?v=example'
 ```
 
 The install script links that command into `~/.local/bin`, which Codex includes
-in its command path. Direct browser and terminal requests remain blocked.
+in its command path, and preserves `roaster-tool-fetch` as a compatibility
+alias. Direct browser and terminal requests remain blocked.
 
 ## Build and run
 
@@ -67,9 +68,12 @@ in its command path. Direct browser and terminal requests remain blocked.
 ./script/test.sh
 ```
 
-The build script stages and ad-hoc signs `dist/Screen Time Roaster.app`.
-The local install flow requires an administrator prompt because enforcement
-must survive app closure and reboot.
+The build script stages and ad-hoc signs `dist/Mastbound.app`. Command-Q hides
+the configuration interface. Even if the interface process is deliberately
+terminated, the separately installed root service continues enforcing the
+rules. The local install flow requires an administrator prompt because only an
+administrator-authorized removal may stop enforcement, and enforcement must
+survive app closure and reboot.
 
 To install the built app and start enforcement:
 

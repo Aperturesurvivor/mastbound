@@ -2,11 +2,12 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
-TOOL_TARGET="/Applications/Screen Time Roaster.app/Contents/Resources/RoasterToolFetch"
-INSTALLER="$ROOT_DIR/dist/Screen Time Roaster.app/Contents/Resources/RoasterInstaller"
+TOOL_LINK="$HOME/.local/bin/mastbound-tool-fetch"
+LEGACY_TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
+TOOL_TARGET="/Applications/Mastbound.app/Contents/Resources/RoasterToolFetch"
+INSTALLER="$ROOT_DIR/dist/Mastbound.app/Contents/Resources/RoasterInstaller"
 if [[ ! -x "$INSTALLER" ]]; then
-  INSTALLER="/Applications/Screen Time Roaster.app/Contents/Resources/RoasterInstaller"
+  INSTALLER="/Applications/Mastbound.app/Contents/Resources/RoasterInstaller"
 fi
 INSTALLER_HASH="$(/usr/bin/shasum -a 256 "$INSTALLER" | /usr/bin/awk '{print $1}')"
 if [[ ! "$INSTALLER_HASH" =~ ^[0-9a-f]{64}$ ]]; then
@@ -26,4 +27,7 @@ APPLESCRIPT
 
 if [[ -L "$TOOL_LINK" && "$(/usr/bin/readlink "$TOOL_LINK")" == "$TOOL_TARGET" ]]; then
   /bin/rm "$TOOL_LINK"
+fi
+if [[ -L "$LEGACY_TOOL_LINK" && "$(/usr/bin/readlink "$LEGACY_TOOL_LINK")" == "$TOOL_TARGET" ]]; then
+  /bin/rm "$LEGACY_TOOL_LINK"
 fi

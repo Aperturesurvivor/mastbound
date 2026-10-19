@@ -1,6 +1,6 @@
 # Security policy
 
-Screen Time Roaster for macOS contains a root launch daemon. Treat the
+Mastbound for macOS contains a root launch daemon. Treat the
 following as repository-wide security invariants:
 
 1. The root daemon must never fetch network content or execute a shell.

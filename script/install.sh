@@ -2,10 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_BUNDLE="$ROOT_DIR/dist/Screen Time Roaster.app"
+APP_BUNDLE="$ROOT_DIR/dist/Mastbound.app"
 INSTALLER="$APP_BUNDLE/Contents/Resources/RoasterInstaller"
-TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
-TOOL_TARGET="/Applications/Screen Time Roaster.app/Contents/Resources/RoasterToolFetch"
+TOOL_LINK="$HOME/.local/bin/mastbound-tool-fetch"
+LEGACY_TOOL_LINK="$HOME/.local/bin/roaster-tool-fetch"
+TOOL_TARGET="/Applications/Mastbound.app/Contents/Resources/RoasterToolFetch"
 
 if [[ ! -x "$INSTALLER" ]]; then
   "$ROOT_DIR/script/build_and_run.sh" --verify
@@ -37,4 +38,11 @@ if [[ -L "$TOOL_LINK" || ! -e "$TOOL_LINK" ]]; then
   /bin/ln -sfn "$TOOL_TARGET" "$TOOL_LINK"
 else
   echo "Installed the app, but preserved the existing non-symlink at $TOOL_LINK." >&2
+fi
+
+if [[ -L "$LEGACY_TOOL_LINK" || ! -e "$LEGACY_TOOL_LINK" ]]; then
+  /bin/mkdir -p "$HOME/.local/bin"
+  /bin/ln -sfn "$TOOL_TARGET" "$LEGACY_TOOL_LINK"
+else
+  echo "Preserved the existing non-symlink at $LEGACY_TOOL_LINK." >&2
 fi
