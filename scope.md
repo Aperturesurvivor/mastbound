@@ -8,6 +8,10 @@ A free, open-source Mac commitment tool that ships with a default adult-site blo
 
 A single onboarding screen asks how long the user wants to quit, then starts the commitment. Later opening the app may show a countdown and allow adding time. No ordinary early-unblock control is intended. UI work belongs to Josiah after core verification. Independently distributed DMG is a possibility; research current Apple distribution, signing, notarization and App Store requirements before deciding. Do not claim the app is impossible to bypass; clearly specify recovery and limitations.
 
+## iOS
+
+iOS app work is out of scope for now at Josiah's direction. Do not pursue or queue iOS development unless he asks to revisit it. Focus on the Mac version.
+
 ## Evidence and open questions
 
 The README describes a root service that persists after app closure and reboot, an adult-content list, and an administrator-authorized uninstall. It does not establish the intended fixed-term commitment behavior; this must be inspected and tested. Do not claim that the existing implementation enforces a year-long commitment or is impossible to bypass. Domain lists are incomplete and can block sites incorrectly; no filter guarantees comprehensive coverage.
