@@ -99,15 +99,14 @@ State {
 
 ### 4.3 Time credit (D2)
 
-Each tick the daemon measures the wall-clock change `w` and the monotonic
-change `m` (`mach_continuous_time`, which counts sleep).
+Implemented in `Sources/MastboundCore/Clock.swift`.
 
-- If `w` is between 0 and `m + 5 s`, credit `w`.
-- If `w` is larger, credit `m` (a clock jump forward is not counted).
-- If `w` is negative, credit `m` (a clock jump back is not counted).
+- Same boot (same `kern.bootsessionuuid`): credit only the monotonic change
+  (`mach_continuous_time`, which counts sleep). The wall clock is not used,
+  so clock changes in either direction have no effect.
 - After a reboot the monotonic clock restarts. Credit the wall-clock change
-  since the last saved tick. This is a documented limit: a clock change made
-  while the Mac is off is accepted.
+  since the last saved tick, or 0 if it went back. This is a documented limit:
+  a clock change made while the Mac is off is accepted.
 
 The commitment ends when `creditedSeconds ≥ durationSeconds`. `endsAt` is
 only for display.
@@ -145,7 +144,7 @@ Each phase ends at a review gate.
 | Phase | Work | Done when |
 | --- | --- | --- |
 | P0 Setup ✅ | `rewrite` branch. `script/test.sh` runs Swift Testing with only the Command Line Tools, so full Xcode is not needed. GitHub Actions macOS job (`.github/workflows/test.yml`) runs build and tests. | Done 2026-11-10: 18/18 tests pass locally and in CI (run 42905105754, 28 s). |
-| P1 Core | `MastboundCore` and unit tests: every state transition, I2, I6 clock cases, list SHA check, hosts section (reuse). | All tests pass in CI; each invariant has a named test. |
+| P1 Core ✅ | `MastboundCore` and unit tests: every state transition, I2, I6 clock cases, list SHA check, hosts section (reuse). | Done 2026-11-10: 52 new tests, CI run 42907245774. See `docs/phase-reports.md`. |
 | P2 Daemon + CLI | `mastboundd`, `mastboundctl`, launchd plist; integration tests in a temp folder: failed writes, missing files, crash between writes, upgrade keeps state. | Integration tests pass; a doc lists what they cannot cover. |
 | P3 Real system | Free macOS VM (UTM on Apple silicon). Scripted checklist: install, start, reboot, delete app, change clock, edit `/etc/hosts` by hand, upgrade, recover, expiry, uninstall. Record actual results. | Checklist results saved in `docs/verification.md`, including failures. |
 | P4 Cleanup | Remove old code, write README limits (§5 of invariants), plan this Mac's migration (D5). | README states what Mastbound cannot do. |
