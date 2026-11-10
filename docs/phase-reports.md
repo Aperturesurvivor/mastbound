@@ -135,3 +135,22 @@ in a row locally.
   code signing in P5, or check that the source folder is root-owned.
 - The full MIT license notices of the list sources are not in the bundle yet
   (P5).
+
+## P3 Real system (part 1) — 2026-11-10
+
+Commits `cc71ecf`…`9080326`. Full results: `docs/verification.md`.
+
+- A local VM was not possible: the Mac has about 11 GB free, a macOS VM
+  needs about 40 GB. The checklist ran on a disposable GitHub macOS runner
+  instead (root, launchd, real `/etc/hosts` and DNS).
+- **Run 1 found a real bug:** install failed on a clean Mac because
+  `/Library/PrivilegedHelperTools` did not exist. Fixed; two new integration
+  tests (missing parents, parent writable by others) and one for error
+  messages. 101 automated tests now.
+- Run 1 also showed weak checks that passed with nothing installed. Fixed.
+- **Run 2: 0 failures in 52 checks.** Includes clock changes, daemon kill,
+  hand edit repair, deleting the source build, upgrade during a commitment,
+  recovery, expiry, and a byte-identical `/etc/hosts` after uninstall.
+- Confirmed limit: an admin can stop the daemon with `launchctl bootout`;
+  the block stays in `/etc/hosts` until someone edits that file.
+- Still open: reboot, power cut, sleep/wake, browsers. They need a local VM.
