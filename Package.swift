@@ -21,7 +21,9 @@ let package = Package(
         .target(name: "MastboundCore"),
         .executableTarget(name: "mastboundd", dependencies: ["MastboundCore"]),
         .executableTarget(name: "mastboundctl", dependencies: ["MastboundCore"]),
+        .executableTarget(name: "make-list", dependencies: ["MastboundCore"]),
         .testTarget(name: "MastboundCoreTests", dependencies: ["MastboundCore"]),
+        .testTarget(name: "MastboundIntegrationTests", dependencies: ["MastboundCore"]),
 
         // Legacy targets. Removed in phase P4.
         .target(name: "RoasterCore"),
