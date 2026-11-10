@@ -144,7 +144,7 @@ Each phase ends at a review gate.
 
 | Phase | Work | Done when |
 | --- | --- | --- |
-| P0 Setup | `rewrite` branch. Install full Xcode. Add a GitHub Actions macOS job that runs `swift test`, so tests do not depend on one Mac. | Empty package builds and CI is green. |
+| P0 Setup ✅ | `rewrite` branch. `script/test.sh` runs Swift Testing with only the Command Line Tools, so full Xcode is not needed. GitHub Actions macOS job (`.github/workflows/test.yml`) runs build and tests. | Done 2026-11-10: 18/18 tests pass locally and in CI (run 42905105754, 28 s). |
 | P1 Core | `MastboundCore` and unit tests: every state transition, I2, I6 clock cases, list SHA check, hosts section (reuse). | All tests pass in CI; each invariant has a named test. |
 | P2 Daemon + CLI | `mastboundd`, `mastboundctl`, launchd plist; integration tests in a temp folder: failed writes, missing files, crash between writes, upgrade keeps state. | Integration tests pass; a doc lists what they cannot cover. |
 | P3 Real system | Free macOS VM (UTM on Apple silicon). Scripted checklist: install, start, reboot, delete app, change clock, edit `/etc/hosts` by hand, upgrade, recover, expiry, uninstall. Record actual results. | Checklist results saved in `docs/verification.md`, including failures. |
