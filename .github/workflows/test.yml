@@ -1,0 +1,35 @@
+name: test
+
+on:
+  push:
+    branches: [main, rewrite]
+    paths-ignore: ["**.md", "Assets/**"]
+  pull_request:
+    paths-ignore: ["**.md", "Assets/**"]
+  workflow_dispatch:
+
+# The repo is private, so macOS minutes are limited. Cancel older runs.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  swift-test:
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      # actions/checkout v7.0.1, pinned to its commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Show toolchain
+        run: |
+          xcode-select -p
+          swift --version
+      - name: Build
+        run: swift build
+      - name: Test
+        run: ./script/test.sh

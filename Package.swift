@@ -6,6 +6,9 @@ let package = Package(
     name: "ScreenTimeRoaster",
     platforms: [.macOS(.v14)],
     products: [
+        .library(name: "MastboundCore", targets: ["MastboundCore"]),
+        .executable(name: "mastboundd", targets: ["mastboundd"]),
+        .executable(name: "mastboundctl", targets: ["mastboundctl"]),
         .library(name: "RoasterCore", targets: ["RoasterCore"]),
         .executable(name: "RoasterMac", targets: ["RoasterMac"]),
         .executable(name: "RoasterEnforcer", targets: ["RoasterEnforcer"]),
@@ -14,6 +17,13 @@ let package = Package(
         .executable(name: "RoasterToolFetch", targets: ["RoasterToolFetch"]),
     ],
     targets: [
+        // Rewrite targets (see docs/rewrite-plan.md).
+        .target(name: "MastboundCore"),
+        .executableTarget(name: "mastboundd", dependencies: ["MastboundCore"]),
+        .executableTarget(name: "mastboundctl", dependencies: ["MastboundCore"]),
+        .testTarget(name: "MastboundCoreTests", dependencies: ["MastboundCore"]),
+
+        // Legacy targets. Removed in phase P4.
         .target(name: "RoasterCore"),
         .executableTarget(
             name: "RoasterMac",
