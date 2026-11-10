@@ -1,9 +1,13 @@
 name: real-system
 
 # P3 checks on a disposable GitHub macOS runner: installs Mastbound as root,
-# edits /etc/hosts, moves the clock, kills the daemon. Started by hand only.
+# edits /etc/hosts, moves the clock, kills the daemon. Runs by hand, or when
+# the checklist itself changes on the rewrite branch (about 10 macOS minutes).
 on:
   workflow_dispatch:
+  push:
+    branches: [rewrite]
+    paths: ["script/p3/**", ".github/workflows/real-system.yml"]
 
 permissions:
   contents: read
