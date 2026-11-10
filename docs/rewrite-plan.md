@@ -116,11 +116,12 @@ only for display.
 | Command | Root | Allowed in | Effect |
 | --- | --- | --- | --- |
 | `status` | no | any | Print phase, end date, time left |
-| `start --hours N` | yes | none, expired | Start a commitment; install the daemon if needed |
-| `extend --hours N` | yes | active, recovering | Add time; never subtracts |
+| `install` | yes | any | Install or upgrade files and the daemon; keeps the state |
+| `start --hours N` / `--days N` | yes | idle | Install, then start a commitment |
+| `extend --hours N` / `--days N` | yes | active, recovering | Add time; never subtracts |
 | `recover --confirm "<phrase>"` | yes | active | Move to recovering; clears 24 h later |
 | `recover --cancel` | yes | recovering | Back to active |
-| `uninstall` | yes | none, expired | Remove daemon and files |
+| `uninstall` | yes | idle | Remove daemon and files |
 
 The UI will call these commands with one admin prompt. This table is the
 contract between the core and Josiah's UI.
@@ -145,7 +146,7 @@ Each phase ends at a review gate.
 | --- | --- | --- |
 | P0 Setup ✅ | `rewrite` branch. `script/test.sh` runs Swift Testing with only the Command Line Tools, so full Xcode is not needed. GitHub Actions macOS job (`.github/workflows/test.yml`) runs build and tests. | Done 2026-11-10: 18/18 tests pass locally and in CI (run 42905105754, 28 s). |
 | P1 Core ✅ | `MastboundCore` and unit tests: every state transition, I2, I6 clock cases, list SHA check, hosts section (reuse). | Done 2026-11-10: 52 new tests, CI run 42907245774. See `docs/phase-reports.md`. |
-| P2 Daemon + CLI | `mastboundd`, `mastboundctl`, launchd plist; integration tests in a temp folder: failed writes, missing files, crash between writes, upgrade keeps state. | Integration tests pass; a doc lists what they cannot cover. |
+| P2 Daemon + CLI ✅ | `mastboundd`, `mastboundctl`, launchd plist; integration tests in a temp folder: failed writes, missing files, crash between writes, upgrade keeps state. | Done 2026-11-10: 28 integration tests, CI run 42909361462. Limits in `docs/phase-reports.md`. |
 | P3 Real system | Free macOS VM (UTM on Apple silicon). Scripted checklist: install, start, reboot, delete app, change clock, edit `/etc/hosts` by hand, upgrade, recover, expiry, uninstall. Record actual results. | Checklist results saved in `docs/verification.md`, including failures. |
 | P4 Cleanup | Remove old code, write README limits (§5 of invariants), plan this Mac's migration (D5). | README states what Mastbound cannot do. |
 | P5 Distribution | Research signing, notarization, DMG, `SMAppService`, App Store rules (to-do step 4). | Short decision note with sources. |

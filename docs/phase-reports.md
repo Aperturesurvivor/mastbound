@@ -69,3 +69,69 @@ by code review.
 - The legacy targets still build and their 17 tests still pass; they are
   removed in P4.
 - Time credit across a reboot trusts the wall clock (documented limit).
+
+## P2 Daemon and command tool — 2026-11-10
+
+Commit `074f355` on `rewrite`. CI run 42909361462 passed (97 tests: 28 new
+integration tests, 52 core, 17 legacy). The full suite also passed 3 times
+in a row locally.
+
+### What changed
+
+| Part | Content |
+| --- | --- |
+| `Engine.swift` | All daemon and command logic against a `Paths` value. One `flock` around every read-change-write. State is written before `/etc/hosts`. |
+| `EngineCache.swift` | Skips unchanged work. A normal tick with the full list: **0.3 ms** (was 1.5 s). The first tick after a start parses both lists once: 1.4 s locally, 2.8 s in CI. |
+| `Installer.swift` | Copies `mastboundd`, `mastboundctl` and the list to `/Library/PrivilegedHelperTools/Mastbound/`, writes the plist. Checks the list hash and Mach-O headers before it changes anything. Never touches the state (I9). |
+| `Paths.swift` | Real layout, and a test layout under a temp folder. |
+| `mastboundd` | Root loop, every 5 s. Logs to the unified log (`com.josiahwilson.mastbound`), the same error at most once a minute. |
+| `mastboundctl` | `status`, `install`, `start`, `extend`, `recover`, `uninstall`. `uninstall` checks first, so a refused uninstall never stops the daemon. |
+| `Resources/adult-domains.txt` | Built by `script/make-list.sh`. **Same 76,744 domains and SHA-256 as the old reviewed snapshot**, so the new parser agrees with the old one. |
+
+### Design decisions made in P2
+
+- **A missing state file with a block in place is damage, not idle.** The
+  block stays (fail closed). SelfControl does the opposite.
+- **Two lists, union.** The list copied at start (`locked-list.txt`, hash in
+  the state) and the installed list are both blocked if valid. One may be
+  missing or changed and the block still holds.
+- **The state is saved once a minute, not every tick.** No credit is lost:
+  credit is always measured from the last saved reading.
+- `mastboundctl install` was added to the §4.4 command list (upgrade without
+  a new commitment).
+
+### Bugs added on purpose to check the tests
+
+| Bug added | Caught? |
+| --- | --- |
+| No file lock | **First no.** The race test did not make the daemon write. Fixed the test; now caught 3 of 3 runs. |
+| Missing state treated as idle | yes |
+| Cache never rechecks `/etc/hosts` | yes |
+| Installer skips the list hash | yes |
+| Uninstall skips the commitment check | yes |
+| Locked list ignored | yes |
+
+### What the integration tests cannot cover (P3 must test on a real Mac)
+
+- Root: tests run as a normal user, so root ownership and `0600 root` files
+  are not exercised.
+- launchd: `RunAtLoad`, `KeepAlive`, restart after a kill, `bootout` and
+  `bootstrap`.
+- A real reboot (new `kern.bootsessionuuid`) and sleep/wake with
+  `mach_continuous_time`.
+- The real `/etc/hosts`, DNS cache flush, and browsers (Safari, Chrome,
+  Firefox with DNS-over-HTTPS, iCloud Private Relay).
+- Deleting the app (I8) and a power cut (folder `fsync`).
+- `mastboundctl` itself: argument parsing and install-from-folder have no
+  automated tests.
+
+### Risks found, not fixed
+
+- **Root runs code from the build folder.** `mastboundctl install` copies
+  `mastboundd` from the folder `mastboundctl` runs in. If that folder is
+  writable by a normal user (for example an app in `~/Downloads`), other
+  software could replace `mastboundd` before the admin runs the command. The
+  old installer bound the admin prompt to a code-signature hash. Fix with
+  code signing in P5, or check that the source folder is root-owned.
+- The full MIT license notices of the list sources are not in the bundle yet
+  (P5).
