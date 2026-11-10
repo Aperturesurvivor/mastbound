@@ -2,9 +2,18 @@ import Foundation
 
 /// Fixed limits for every commitment. See docs/rewrite-plan.md §2.
 public enum Policy {
+    #if MASTBOUND_TESTING
+    // Test builds only (script/build-cli.sh --testing), so real-system checks
+    // can run expiry and recovery in minutes. Never set for a release.
+    public static let isTestBuild = true
+    public static let minimumDurationSeconds: Double = 60                 // 1 minute
+    public static let recoveryDelaySeconds: Double = 120                  // 2 minutes
+    #else
+    public static let isTestBuild = false
     public static let minimumDurationSeconds: Double = 60 * 60            // 1 hour
-    public static let maximumRemainingSeconds: Double = 365 * 24 * 60 * 60 // D4: 365 days
     public static let recoveryDelaySeconds: Double = 24 * 60 * 60         // D1: 24 hours
+    #endif
+    public static let maximumRemainingSeconds: Double = 365 * 24 * 60 * 60 // D4: 365 days
     public static let recoveryPhrase = "I want to end my commitment early"
 }
 

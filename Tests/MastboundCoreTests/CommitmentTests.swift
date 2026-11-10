@@ -248,3 +248,13 @@ struct CommitmentPropertyTests {
         }
     }
 }
+
+@Suite("Build settings")
+struct BuildSettingTests {
+    @Test("Normal builds use the real limits, not the test-build limits")
+    func realLimits() {
+        #expect(!Policy.isTestBuild)
+        #expect(Policy.minimumDurationSeconds == 3600)
+        #expect(Policy.recoveryDelaySeconds == 86_400)
+    }
+}

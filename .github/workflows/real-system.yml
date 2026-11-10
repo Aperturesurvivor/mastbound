@@ -1,0 +1,37 @@
+name: real-system
+
+# P3 checks on a disposable GitHub macOS runner: installs Mastbound as root,
+# edits /etc/hosts, moves the clock, kills the daemon. Started by hand only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-system:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      # actions/checkout v7.0.1, pinned to its commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Build test and upgrade builds
+        run: |
+          script/build-cli.sh --testing "$RUNNER_TEMP/mastbound"
+          script/build-cli.sh --testing --upgrade-mark "$RUNNER_TEMP/mastbound-upgrade"
+      - name: Run the real-system checklist
+        env:
+          MASTBOUND_DISPOSABLE_MACHINE: "1"
+        run: |
+          script/p3/real-system-check.sh "$RUNNER_TEMP/mastbound" "$RUNNER_TEMP/mastbound-upgrade" "$RUNNER_TEMP/results.md"
+      - name: Publish results
+        if: always()
+        run: |
+          {
+            echo "## Real-system results"
+            echo "Runner: $(sw_vers -productName) $(sw_vers -productVersion), $(uname -m), commit ${GITHUB_SHA:0:7}"
+            echo
+            cat "$RUNNER_TEMP/results.md" 2>/dev/null || echo "No results file."
+          } >> "$GITHUB_STEP_SUMMARY"

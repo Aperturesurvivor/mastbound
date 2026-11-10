@@ -8,9 +8,10 @@ import MastboundCore
 let usage = """
 usage:
   mastboundctl status
+  mastboundctl version
   mastboundctl install
-  mastboundctl start  (--hours N | --days N)
-  mastboundctl extend (--hours N | --days N)
+  mastboundctl start  (--minutes N | --hours N | --days N)
+  mastboundctl extend (--minutes N | --hours N | --days N)
   mastboundctl recover --confirm "\(Policy.recoveryPhrase)"
   mastboundctl recover --cancel
   mastboundctl uninstall
@@ -30,6 +31,7 @@ func requireRoot() {
 func durationSeconds(_ arguments: [String]) throws -> Double {
     guard arguments.count == 2, let value = Double(arguments[1]), value.isFinite, value > 0 else { throw UsageError() }
     switch arguments[0] {
+    case "--minutes": return value * 60
     case "--hours": return value * 3600
     case "--days": return value * 86_400
     default: throw UsageError()
@@ -43,6 +45,7 @@ func format(_ seconds: Double) -> String {
 }
 
 func printStatus(_ engine: Engine) throws {
+    if Policy.isTestBuild { print("WARNING: test build with short durations; not for real use") }
     guard FileManager.default.fileExists(atPath: engine.paths.statusFile.path) else {
         print("phase: not installed")
         return
@@ -107,6 +110,8 @@ do {
     switch arguments.first {
     case "status":
         try printStatus(engine)
+    case "version":
+        print(Mastbound.version + (Policy.isTestBuild ? " (test build)" : ""))
     case "install":
         requireRoot()
         try install(engine)

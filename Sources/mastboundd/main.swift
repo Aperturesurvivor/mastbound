@@ -7,7 +7,7 @@ import OSLog
 // the /etc/hosts section. Errors keep the current block (fail closed).
 
 let logger = Logger(subsystem: "com.josiahwilson.mastbound", category: "daemon")
-let interval: UInt32 = 5
+let interval: UInt32 = Policy.isTestBuild ? 2 : 5
 
 guard geteuid() == 0 else {
     FileHandle.standardError.write(Data("mastboundd must run as root.\n".utf8))
@@ -20,7 +20,7 @@ let engine = Engine(
     clock: { try SystemClock.now() },
     afterHostsChange: { SystemCommands.flushDNSCaches() }
 )
-logger.notice("mastboundd \(Mastbound.version, privacy: .public) started")
+logger.notice("mastboundd \(Mastbound.version, privacy: .public) started\(Policy.isTestBuild ? " (TEST BUILD)" : "", privacy: .public)")
 
 var lastMessage = ""
 var lastMessageTime = Date.distantPast
