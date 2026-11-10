@@ -83,15 +83,34 @@ recovering_and_blocked() { phase_is recovering && has_section; }
 last_end_is() { "$ICTL" status 2>/dev/null | grep -q "last commitment: $1" && phase_is idle; }
 not_readable() { ! cat "$1" >/dev/null 2>&1; }
 hosts_not_writable() { ! (echo x >> /etc/hosts) 2>/dev/null; }
-refused() { ! "$@"; }
+refused_with() { # refused_with <expected message part> <command...>
+  local expected="$1" output; shift
+  if output="$("$@" 2>&1)"; then echo "command succeeded: $output"; return 1; fi
+  [[ "$output" == *"$expected"* ]] || { echo "wrong refusal: $output"; return 1; }
+  echo "$output"
+}
+stop_if_failed() { # stop_if_failed <step>: later checks mean nothing if this failed
+  if (( FAILS > 0 )); then
+    record "--" "remaining checks" FAIL "not run: $1 failed"
+    echo; echo "Failures: $FAILS"; echo "" >> "$RESULTS"; echo "Failures: $FAILS" >> "$RESULTS"
+    exit 1
+  fi
+}
+resolves_normally() { dscacheutil -q host -a name "$1" | grep -E '^ip(v6)?_address: ' | grep -qvE ': (0\.0\.0\.0|::|127\.)'; }
 connection_fails() { ! curl -sS --max-time 5 -o /dev/null "http://$1/"; }
 gone() { ! sudo test -e "$1"; }
 
 EXPECTED_LINES=$(( $(wc -l < "$BUILD/adult-domains.txt") * 2 ))
-DOMAIN="$(sed -n '1000p' "$BUILD/adult-domains.txt")"
 ORIGINAL_HOSTS_SHA="$(hosts_sha)"
-record P0 "Start state" NOTE "macOS $(sw_vers -productVersion), hosts sha ${ORIGINAL_HOSTS_SHA:0:12}, test domain #1000, $("$CTL" version)"
-dscacheutil -q host -a name "$DOMAIN" >/dev/null 2>&1 # warm the DNS cache
+# A list domain that resolves to a real address now, so the block is visible.
+DOMAIN=""
+for line in $(seq 1000 1400); do
+  candidate="$(sed -n "${line}p" "$BUILD/adult-domains.txt")"
+  if resolves_normally "$candidate"; then DOMAIN="$candidate"; DOMAIN_LINE=$line; break; fi
+done
+record P0 "Start state" NOTE "macOS $(sw_vers -productVersion), hosts sha ${ORIGINAL_HOSTS_SHA:0:12}, test domain list line ${DOMAIN_LINE:-none}, $("$CTL" version)"
+record P0a "test domain resolves normally before the block" "$([[ -n "$DOMAIN" ]] && echo PASS || echo FAIL)" "${DOMAIN:+cached in DNS}"
+stop_if_failed P0a
 
 # --- Start -----------------------------------------------------------------
 check S1 "start installs and blocks" sudo "$CTL" start --minutes 30
@@ -99,12 +118,14 @@ check S1a "daemon running under launchd" wait_until 20 daemon_running
 record S1b "hosts section has every domain (v4+v6)" "$(section_complete && echo PASS || echo FAIL)" "$(section_lines) of $EXPECTED_LINES lines"
 check S1c "DNS cache flushed: test domain resolves to 0.0.0.0 at once" resolves_blocked "$DOMAIN"
 check S1d "connection to the test domain fails" connection_fails "$DOMAIN"
+check S1d2 "curl reports the block, not a DNS failure" bash -c "curl -sS --max-time 5 -o /dev/null http://$DOMAIN/ 2>&1 | grep -qv 'Could not resolve'"
 details="$(for f in "$HELPER/mastboundd" "$HELPER/mastboundctl" "$HELPER/adult-domains.txt" "$PLIST" "$STATE_DIR/state.json" "$STATE_DIR/status.json" "$STATE_DIR/locked-list.txt"; do printf '%s %s; ' "$(basename "$f")" "$(sudo stat -f '%Lp %Su:%Sg' "$f")"; done)"
 expected="mastboundd 755 root:wheel; mastboundctl 755 root:wheel; adult-domains.txt 644 root:wheel; $LABEL.plist 644 root:wheel; state.json 600 root:wheel; status.json 644 root:wheel; locked-list.txt 600 root:wheel; "
 record S1e "file modes and owners" "$([[ "$details" == "$expected" ]] && echo PASS || echo FAIL)" "$details"
 check S1f "status readable without root" phase_is active
 check S1g "normal user cannot read the state" not_readable "$STATE_DIR/state.json"
 check S1h "normal user cannot write /etc/hosts" hosts_not_writable
+stop_if_failed S1
 
 # --- Repair ----------------------------------------------------------------
 sudo /usr/bin/sed -i '' "/$MARKER/,/# END MASTBOUND/d" /etc/hosts
@@ -136,10 +157,10 @@ record S4c "duration not changed by clock moves" "$([[ "$(duration_seconds)" == 
 record S4d "status after clock restore" NOTE "$("$ICTL" status 2>&1 | tr '\n' ';')"
 
 # --- Refusals --------------------------------------------------------------
-check S5 "uninstall is refused while active" refused sudo "$ICTL" uninstall
+check S5 "uninstall is refused while active" refused_with "A commitment is running" sudo "$ICTL" uninstall
 check S5a "daemon still running after refused uninstall" daemon_running
-check S5b "second start is refused" refused sudo "$ICTL" start --minutes 5
-check S5c "recovery with a wrong phrase is refused" refused sudo "$ICTL" recover --confirm "let me out"
+check S5b "second start is refused" refused_with "already running" sudo "$ICTL" start --minutes 5
+check S5c "recovery with a wrong phrase is refused" refused_with "phrase does not match" sudo "$ICTL" recover --confirm "let me out"
 
 # --- Delete the app --------------------------------------------------------
 COPY="$(mktemp -d)/mastbound"

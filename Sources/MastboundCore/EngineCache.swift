@@ -17,7 +17,7 @@ struct FileSignature: Equatable, Sendable {
     init(of url: URL) throws {
         var fileStat = stat()
         guard lstat(url.path, &fileStat) == 0 else {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            throw MastboundError.posix(url, "inspect")
         }
         device = fileStat.st_dev
         inode = fileStat.st_ino

@@ -256,7 +256,7 @@ public struct Engine: Sendable {
         }
         var fileStat = stat()
         guard lstat(paths.hostsFile.path, &fileStat) == 0 else {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            throw MastboundError.posix(paths.hostsFile, "inspect")
         }
         return HostsFile(text: text, mode: fileStat.st_mode & 0o777, owner: fileStat.st_uid, group: fileStat.st_gid)
     }
@@ -289,7 +289,7 @@ public struct Engine: Sendable {
 
     private func removeIfPresent(_ url: URL) throws {
         guard unlink(url.path) == 0 || errno == ENOENT else {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            throw MastboundError.posix(url, "remove")
         }
     }
 

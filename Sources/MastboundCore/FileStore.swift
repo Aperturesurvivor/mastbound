@@ -11,14 +11,14 @@ public enum FileStore {
             if errno == ELOOP {
                 throw MastboundError.unsafeFile("Refusing a symbolic link: \(url.path)")
             }
-            throw posixError()
+            throw MastboundError.posix(url, "open")
         }
         defer { close(descriptor) }
 
         // Check the opened descriptor, not the path, so the file cannot be
         // swapped between the check and the read.
         var fileStat = stat()
-        guard fstat(descriptor, &fileStat) == 0 else { throw posixError() }
+        guard fstat(descriptor, &fileStat) == 0 else { throw MastboundError.posix(url, "inspect") }
         guard (fileStat.st_mode & S_IFMT) == S_IFREG else {
             throw MastboundError.unsafeFile("Refusing a non-regular file: \(url.path)")
         }
@@ -37,7 +37,7 @@ public enum FileStore {
         while true {
             let count = Darwin.read(descriptor, &buffer, buffer.count)
             if count == 0 { break }
-            guard count > 0 else { throw posixError() }
+            guard count > 0 else { throw MastboundError.posix(url, "read") }
             guard data.count + count <= maximumSize else {
                 throw MastboundError.fileTooLarge("\(url.path) grew past \(maximumSize) bytes.")
             }
@@ -65,7 +65,7 @@ public enum FileStore {
             O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC,
             mode
         )
-        guard descriptor >= 0 else { throw posixError() }
+        guard descriptor >= 0 else { throw MastboundError.posix(temporary, "create") }
 
         do {
             try data.withUnsafeBytes { bytes in
@@ -73,24 +73,25 @@ public enum FileStore {
                 var written = 0
                 while written < bytes.count {
                     let count = Darwin.write(descriptor, base.advanced(by: written), bytes.count - written)
-                    guard count > 0 else { throw posixError() }
+                    guard count > 0 else { throw MastboundError.posix(temporary, "write") }
                     written += count
                 }
             }
             guard fchmod(descriptor, mode) == 0,
                   fchown(descriptor, owner, group) == 0,
-                  fsync(descriptor) == 0 else { throw posixError() }
+                  fsync(descriptor) == 0 else { throw MastboundError.posix(temporary, "finish writing") }
         } catch {
             close(descriptor)
             unlink(temporary.path)
             throw error
         }
         guard close(descriptor) == 0 else {
+            let error = MastboundError.posix(temporary, "close")
             unlink(temporary.path)
-            throw posixError()
+            throw error
         }
         guard rename(temporary.path, url.path) == 0 else {
-            let error = posixError()
+            let error = MastboundError.posix(url, "replace")
             unlink(temporary.path)
             throw error
         }
@@ -99,12 +100,8 @@ public enum FileStore {
 
     private static func syncDirectory(_ directory: URL) throws {
         let descriptor = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
-        guard descriptor >= 0 else { throw posixError() }
+        guard descriptor >= 0 else { throw MastboundError.posix(directory, "open") }
         defer { close(descriptor) }
-        guard fsync(descriptor) == 0 else { throw posixError() }
-    }
-
-    private static func posixError() -> POSIXError {
-        POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        guard fsync(descriptor) == 0 else { throw MastboundError.posix(directory, "sync") }
     }
 }

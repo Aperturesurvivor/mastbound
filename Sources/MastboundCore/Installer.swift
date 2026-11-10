@@ -48,7 +48,7 @@ public enum Installer {
         let files = executableNames.map { paths.helperDirectory.appendingPathComponent($0) }
             + [paths.installedList, paths.launchDaemonPlist, paths.lockFile]
         for file in files where unlink(file.path) != 0 && errno != ENOENT {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            throw MastboundError.posix(file, "remove")
         }
         for directory in [paths.helperDirectory, paths.stateDirectory] where rmdir(directory.path) != 0 && errno != ENOENT {
             throw MastboundError.unsafeFile("Could not remove \(directory.path); it is not empty.")
@@ -67,10 +67,19 @@ public enum Installer {
     }
 
     /// Creates `url` if needed, then requires it to be a real folder with the
-    /// expected owner and no group or world write access.
+    /// expected owner and no group or world write access. A missing parent
+    /// (for example `/Library/PrivilegedHelperTools` on a clean Mac) is
+    /// created the same way; an existing parent must not be writable by
+    /// other users, or someone else could swap the folder.
     private static func makeDirectory(_ url: URL, paths: Paths) throws {
+        let parent = url.deletingLastPathComponent()
+        if !FileManager.default.fileExists(atPath: parent.path) {
+            try makeDirectory(parent, paths: paths)
+        } else {
+            try requireNotWritableByOthers(parent)
+        }
         if mkdir(url.path, 0o755) != 0 && errno != EEXIST {
-            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            throw MastboundError.posix(url, "create")
         }
         var fileStat = stat()
         guard lstat(url.path, &fileStat) == 0, (fileStat.st_mode & S_IFMT) == S_IFDIR else {
@@ -78,9 +87,21 @@ public enum Installer {
         }
         if fileStat.st_uid != paths.owner || fileStat.st_gid != paths.group {
             guard chown(url.path, paths.owner, paths.group) == 0 else {
-                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+                throw MastboundError.posix(url, "set the owner of")
             }
         }
-        guard chmod(url.path, 0o755) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        guard chmod(url.path, 0o755) == 0 else { throw MastboundError.posix(url, "set the mode of") }
+    }
+
+    /// Allows the sticky bit (as on `/tmp`), which stops others from
+    /// replacing entries they do not own.
+    private static func requireNotWritableByOthers(_ url: URL) throws {
+        var fileStat = stat()
+        guard stat(url.path, &fileStat) == 0 else { throw MastboundError.posix(url, "inspect") }
+        let writableByOthers = (fileStat.st_mode & 0o022) != 0
+        let sticky = (fileStat.st_mode & S_ISVTX) != 0
+        guard !writableByOthers || sticky else {
+            throw MastboundError.unsafeFile("\(url.path) is writable by other users.")
+        }
     }
 }

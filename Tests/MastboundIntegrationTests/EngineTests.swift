@@ -247,6 +247,46 @@ struct EngineInstallTests {
         #expect(plist["Label"] as? String == Paths.launchDaemonLabel)
     }
 
+    @Test("Install creates missing parent folders, as on a clean Mac")
+    func installCreatesMissingParents() throws {
+        let f = try Fixture()
+        var paths = f.paths
+        paths.helperDirectory = f.root.appendingPathComponent("PrivilegedHelperTools/Mastbound", isDirectory: true)
+        paths.stateDirectory = f.root.appendingPathComponent("Application Support/Mastbound", isDirectory: true)
+        let build = try f.makeBuild(list: f.list)
+        try Installer.installFiles(from: build.directory, paths: paths, bundledListSHA256: build.sha)
+        #expect(FileManager.default.fileExists(atPath: paths.installedDaemon.path))
+        #expect(try f.mode(paths.helperDirectory.deletingLastPathComponent()) == 0o755)
+        #expect(try f.mode(paths.stateDirectory) == 0o755)
+    }
+
+    @Test("Install refuses a parent folder that other users can write")
+    func installRefusesOpenParent() throws {
+        let f = try Fixture()
+        var paths = f.paths
+        let open = f.root.appendingPathComponent("open")
+        try FileManager.default.createDirectory(at: open, withIntermediateDirectories: false)
+        chmod(open.path, 0o777)
+        paths.helperDirectory = open.appendingPathComponent("Mastbound")
+        let build = try f.makeBuild(list: f.list)
+        #expect(throws: MastboundError.self) {
+            try Installer.installFiles(from: build.directory, paths: paths, bundledListSHA256: build.sha)
+        }
+    }
+
+    @Test("File errors name the file")
+    func errorsNameTheFile() throws {
+        let f = try Fixture()
+        let missing = f.root.appendingPathComponent("no-such-file")
+        do {
+            _ = try FileStore.read(at: missing, expectedOwner: nil, maximumSize: 10)
+            Issue.record("Expected an error")
+        } catch {
+            #expect(error.localizedDescription.contains(missing.path))
+            #expect(error.localizedDescription.contains("No such file"))
+        }
+    }
+
     @Test("Install refuses a build with a wrong list hash or a non-executable, and changes nothing")
     func installRefusesBadBuild() throws {
         let f = try Fixture()
