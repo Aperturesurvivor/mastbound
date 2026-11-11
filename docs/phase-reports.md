@@ -154,3 +154,33 @@ Commits `cc71ecf`…`9080326`. Full results: `docs/verification.md`.
 - Confirmed limit: an admin can stop the daemon with `launchctl bootout`;
   the block stays in `/etc/hosts` until someone edits that file.
 - Still open: reboot, power cut, sleep/wake, browsers. They need a local VM.
+
+## P4 Cleanup — 2026-11-11
+
+### What changed
+
+- **Removed the legacy code:** `RoasterCore`, `RoasterMac`, `RoasterEnforcer`,
+  `RoasterInstaller`, `RoasterBlocklist`, `RoasterToolFetch`, their 17 tests,
+  and `script/build_and_run.sh`, `install.sh`, `uninstall.sh`,
+  `package_release.sh`. They stay on `main` and in git history. The package
+  is now named `Mastbound`. 84 tests remain (all Mastbound).
+- **README rewritten** for the new design: how it works, file paths,
+  commands, the recovery path, and "What Mastbound cannot do" (admin
+  `launchctl bootout`, macOS Recovery, clock change while off, exact-name
+  blocking only, no IP/VPN/proxy blocking, untested DoH and Private Relay,
+  incomplete list).
+- **SECURITY.md rewritten** for the new design, with the install-source risk
+  as a release blocker.
+- **D5 decided:** `docs/migration.md`. Start the new commitment first, then
+  uninstall the old build. The two builds use different hosts sections, so
+  there is no time with no block. No conversion code.
+- `.codex` environment action now runs `script/test.sh`.
+
+### Not done or not tested
+
+- The migration was not run. The main Mac is unchanged.
+- That the old `--clear` removes only its own hosts section is read from the
+  old code (it edits only between its markers), not tested.
+- `Assets/` (app icon) is kept for the UI.
+- No release packaging script exists now. P5 decides how to package.
+- P3 reboot, power-cut, sleep and browser checks are still open.

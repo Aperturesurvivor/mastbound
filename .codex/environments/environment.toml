@@ -6,6 +6,6 @@ name = "mastbound"
 script = ""
 
 [[actions]]
-name = "Run"
+name = "Test"
 icon = "run"
-command = "./script/build_and_run.sh"
+command = "./script/test.sh"

@@ -1,35 +1,30 @@
 # Security policy
 
-Mastbound for macOS contains a root launch daemon. Treat the
-following as repository-wide security invariants:
+Mastbound for macOS contains a root launch daemon. Treat the following as
+repository-wide security rules:
 
-1. The root daemon must never fetch network content or execute a shell.
-2. Unprivileged configuration must be a regular file owned by the configured
-   user, not writable by group or others, bounded in size, and strictly parsed.
-3. Domain and endpoint strings must never reach a privileged file or process
-   invocation before grammar validation.
-4. `/etc/hosts` edits must be atomic and modify only the exact managed marker
-   section while preserving unrelated content and metadata.
-5. PF changes must remain inside `com.apple/ScreenTimeRoasterMac`; the global
-   ruleset must never be flushed or replaced.
-6. Installer and uninstaller targets must be fixed absolute paths, must reject
-   symlink or non-regular-file substitutions, and must remove enforcement
-   before removing the helper.
-7. A failed or malformed list update must preserve the last validated cache.
-8. Once permanent protection is locked, unprivileged cache or configuration
-   changes must not remove previously accepted domains.
-9. Public release is blocked until tests, real-machine install/uninstall, and
-   a repository security scan pass.
-10. Network blocklist inputs must use the fixed HTTPS host and a reviewed,
-    immutable upstream revision; advancing that revision requires a security
-    review.
-11. App-bundle verification and helper extraction must occur only in a
-    root-owned directory that is not writable by group or others.
-12. Internal enforcement state containing domains, endpoints, or PF tokens
-    must be root-readable only; user-visible status must not expose it.
-13. The unprivileged Codex fetch lane must accept only normalized HTTPS URLs on
-    the scheduled domain allowlist, disable curl configuration and proxy
-    inheritance, refuse redirect following, and never modify blocker state.
+1. The root daemon and `mastboundctl` must never fetch network content or
+   execute a shell. The only child processes are fixed absolute paths
+   (`/bin/launchctl`, `/usr/bin/dscacheutil`, `/usr/bin/killall`).
+2. All system paths come from one `Paths` value. Root files are read with
+   `O_NOFOLLOW` and checked for type, owner, mode and size after opening.
+3. Every domain is validated before it reaches `/etc/hosts`.
+4. `/etc/hosts` edits are atomic (random temp file, `fsync`, `rename`, folder
+   `fsync`) and change only the exact `MASTBOUND` marker section. Damaged
+   markers stop the write.
+5. The state file is root-owned, mode `0600`. Only `status.json` (phase and
+   end date) is readable by other users.
+6. A missing, damaged or unreadable state or list keeps the current block
+   (fail closed).
+7. The shipped list is checked against a pinned SHA-256 before install and
+   each time the daemon sees the file change. Changing the list is a code-review action.
+8. The installer refuses source files that are not Mach-O executables, and
+   refuses target folders that other users can write.
+9. Public release is blocked until the open checks in
+   `docs/verification.md` pass and the install source is protected (known
+   risk: `mastboundctl install` copies `mastboundd` from its own folder,
+   which may be user-writable; fix with code signing or a root-owned source
+   check).
 
 Report suspected vulnerabilities privately through a
 [GitHub security advisory](https://github.com/Aperturesurvivor/Screen-Time-Roaster/security/advisories/new).

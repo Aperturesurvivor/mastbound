@@ -31,7 +31,7 @@ The plan uses the recommended answers below. Change any of them before P1.
 | D2 | Credit time with the monotonic clock while running (§4.3). |
 | D3 | At expiry the daemon removes its block and goes idle. |
 | D4 | Duration from 1 hour to 365 days. Remaining time can never pass 365 days. |
-| D5 | Open. See §7. |
+| D5 | Start the new commitment first, then uninstall the old build. See `docs/migration.md`. |
 
 ## 3. What we take from SelfControl, and what we do differently
 
@@ -148,16 +148,14 @@ Each phase ends at a review gate.
 | P1 Core ✅ | `MastboundCore` and unit tests: every state transition, I2, I6 clock cases, list SHA check, hosts section (reuse). | Done 2026-11-10: 52 new tests, CI run 42907245774. See `docs/phase-reports.md`. |
 | P2 Daemon + CLI ✅ | `mastboundd`, `mastboundctl`, launchd plist; integration tests in a temp folder: failed writes, missing files, crash between writes, upgrade keeps state. | Done 2026-11-10: 28 integration tests, CI run 42909361462. Limits in `docs/phase-reports.md`. |
 | P3 Real system 🟡 | Free macOS VM (UTM on Apple silicon). Scripted checklist: install, start, reboot, delete app, change clock, edit `/etc/hosts` by hand, upgrade, recover, expiry, uninstall. Record actual results. | Partly done 2026-11-10: 52 checks pass on a GitHub macOS runner (`docs/verification.md`). Reboot, power cut, sleep and browsers still need a local VM. |
-| P4 Cleanup | Remove old code, write README limits (§5 of invariants), plan this Mac's migration (D5). | README states what Mastbound cannot do. |
+| P4 Cleanup ✅ | Remove old code, write README limits (§5 of invariants), plan this Mac's migration (D5). | Done 2026-11-11: legacy targets removed, 84 tests. README limits, `docs/migration.md`. |
 | P5 Distribution | Research signing, notarization, DMG, `SMAppService`, App Store rules (to-do step 4). | Short decision note with sources. |
 | P6 UI | Josiah builds the one-screen UI with AI tools against the §4.4 contract. | Josiah's call. |
 
 ## 7. Open questions
 
-- **D5, this Mac.** The installed old build has permanent protection locked.
-  Options: (a) the new installer converts it into a commitment of a length
-  Josiah chooses, (b) uninstall the old build first with the admin password,
-  then start fresh. (b) is simpler and is the recommendation.
+- **D5, this Mac.** Decided in P4: start the new commitment first, then
+  uninstall the old build. No conversion code. See `docs/migration.md`.
 - **Repo name.** The repo is still `Screen-Time-Roaster`. Rename to
   `mastbound` now or after v1?
 - **Daemon registration.** A launchd plist written by the installer works

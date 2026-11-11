@@ -2,145 +2,132 @@
 
 <img src="Assets/AppIcon-1024.png" alt="Mastbound app icon" width="128">
 
-A local-only macOS blocker with recurring schedules and a permanent
-adult-content protection list. It is the Mac companion to the iPhone Mastbound
-project.
+Mastbound is a free, open-source commitment blocker for the Mac. It ships
+with a list of adult websites. You choose how long the block lasts, from one
+hour to one year. The block then stays on until that time is over, even if
+you quit or delete the app or restart the Mac. There is no button to end it
+early.
 
-## Current state
+Mastbound makes the block hard to undo on impulse. **It cannot make the block
+impossible to undo.** An administrator of a Mac can always remove it. Read
+[What Mastbound cannot do](#what-mastbound-cannot-do) before you use it.
 
-This is an early public source release for macOS 14 and later. The
-implementation has no package dependencies. Normal browser traffic is never
-observed; the optional Codex tool lane sends only its explicit fetches and DNS
-lookups to the requested service and configured DNS-over-HTTPS resolver.
+## Status
 
-The initial public build passed 17 Swift tests, deep code-signature
-verification, a real-machine install and path-migration check, launch-daemon
-and permanent-block checks, and a complete security review with no reportable
-findings. It is still intentionally a source-first release rather than a
-notarized downloadable package.
+Pre-release. There is no app yet, only a command-line tool. The core is
+tested (see [docs/verification.md](docs/verification.md)), but some checks
+are still open: restart, power loss, sleep and wake, and real browsers. Do
+not rely on it yet.
 
-## Architecture
+## How it works
 
-- `RoasterMac`: SwiftUI configuration and status app.
-- `RoasterEnforcer`: minimal root launch daemon. It never accesses the network.
-- `RoasterBlocklist`: unprivileged adult-list downloader and validator.
-- `RoasterInstaller`: administrator-authorized, fixed-path installer and
-  uninstaller.
-- `RoasterToolFetch`: a narrow Codex-only HTTPS fetch lane for domains that the
-  evening schedule blocks locally.
-- `RoasterCore`: schedule, validation, policy, hosts editing, and PF rendering.
+- A small root service (`mastboundd`) runs under `launchd`. Every 5 seconds
+  it makes one marked section of `/etc/hosts` match the commitment. If
+  someone edits that section, the service puts it back.
+- The service and its files live in root-owned folders, not inside the app.
+  Deleting the app does not stop the block.
+- Time is counted with the Mac's monotonic clock. Changing the date or time
+  in System Settings does not shorten the commitment.
+- Any error keeps the block in place. A missing or damaged state file is
+  treated as damage, not as "no commitment".
+- At the end of the commitment the service removes its block by itself.
+- The service never uses the network and never runs a shell.
 
-Exact domains are blocked through one clearly marked `/etc/hosts` section.
-Literal IP-and-port targets are blocked through the isolated
-`com.apple/ScreenTimeRoasterMac` PF anchor. Active scheduled rules are
-additive-only until their original end time. Once permanent adult protection
-is enabled, its root-owned snapshot is also additive-only and can be removed
-only through the administrator-authorized uninstall path.
+Files:
 
-The adult-domain sources are pinned to a reviewed StevenBlack repository
-revision. Updating that revision is deliberately a code-review and release
-action; a routine in-app refresh cannot silently switch to newer upstream data.
-Both the downloader and root service require the reviewed domain count and
-SHA-256 before accepting that cache.
+| Path | Content |
+| --- | --- |
+| `/Library/PrivilegedHelperTools/Mastbound/` | `mastboundd`, `mastboundctl`, the installed list |
+| `/Library/Application Support/Mastbound/state.json` | Commitment state, root only |
+| `/Library/Application Support/Mastbound/status.json` | Phase and end date, readable by everyone |
+| `/Library/LaunchDaemons/com.josiahwilson.mastbound.plist` | The `launchd` job |
+| `/etc/hosts` | One section between `# BEGIN MASTBOUND — MANAGED BLOCK` and `# END MASTBOUND — MANAGED BLOCK` |
 
-The hosts file is system-wide, so it cannot distinguish Safari from a local
-Codex subprocess. `RoasterToolFetch` provides that distinction without weakening
-the browser block. It runs only when an ancestor belongs to OpenAI's signed
-Codex app, accepts only HTTPS URLs on the exact scheduled social domains, and
-does not accept cookies, uploads, custom curl flags, or cross-site redirects.
-It uses Cloudflare DNS-over-HTTPS for the requested hostname; the root service
-and normal browsing never use that lane.
+## Commands
 
-From a Codex tool process:
-
-```sh
-mastbound-tool-fetch 'https://www.youtube.com/watch?v=example'
+```
+mastboundctl status
+mastboundctl version
+mastboundctl install
+mastboundctl start  (--minutes N | --hours N | --days N)
+mastboundctl extend (--minutes N | --hours N | --days N)
+mastboundctl recover --confirm "I want to end my commitment early"
+mastboundctl recover --cancel
+mastboundctl uninstall
 ```
 
-The install script links that command into `~/.local/bin`, which Codex includes
-in its command path, and preserves `roaster-tool-fetch` as a compatibility
-alias. Direct browser and terminal requests remain blocked.
+All commands except `status` and `version` need `sudo`.
 
-## Build and run
+- `start` installs the service if needed and starts a commitment. The
+  minimum is 1 hour. The maximum is 365 days.
+- `extend` adds time. It can never take time away. The time left can never
+  pass 365 days.
+- `uninstall` works only when no commitment is active.
+
+### Early exit (recovery)
+
+For real problems, such as a wrong site in the list or a Mac you must sell,
+there is one slow way out:
+
+1. Run `sudo mastboundctl recover --confirm "I want to end my commitment early"`.
+2. Wait 24 hours. The block stays on during the wait.
+3. After 24 hours the block ends.
+
+You can cancel the wait with `sudo mastboundctl recover --cancel`. The 24
+hours are counted the same way as the commitment, so a clock change does not
+skip them. This command will not be in the app.
+
+## What Mastbound cannot do
+
+- **An administrator can remove the block at any time.** For example,
+  `sudo launchctl bootout system/com.josiahwilson.mastbound` stops the
+  service, and then `/etc/hosts` can be edited by hand. Mastbound cannot
+  stop this.
+- macOS Recovery, or another Mac with the disk attached, can edit
+  `/etc/hosts`.
+- A clock change made while the Mac is off is accepted. After a restart the
+  monotonic clock starts again from zero, so Mastbound uses the wall clock to
+  count the time the Mac was off. If the clock went back, it counts 0.
+- `/etc/hosts` blocks exact host names only. It does not block:
+  - subdomains or sites that are not in the list,
+  - IP addresses,
+  - VPNs, remote proxies, Tor, or remote desktops,
+  - apps or browsers that do not use the system resolver. DNS-over-HTTPS and
+    iCloud Private Relay are not tested yet.
+- The list is not complete and can block a site by mistake. No list can
+  find every adult site.
+- It does not work on iPhone or iPad.
+
+## Build and test
+
+Mastbound has no package dependencies. The Command Line Tools are enough;
+full Xcode is not needed.
 
 ```sh
-./script/build_and_run.sh --verify
 ./script/test.sh
+./script/build-cli.sh            # builds into dist/mastbound
 ```
 
-The build script stages and ad-hoc signs `dist/Mastbound.app`. Command-Q hides
-the configuration interface. Even if the interface process is deliberately
-terminated, the separately installed root service continues enforcing the
-rules. The local install flow requires an administrator prompt because only an
-administrator-authorized removal may stop enforcement, and enforcement must
-survive app closure and reboot.
+`script/make-list.sh` rebuilds `Resources/adult-domains.txt` from a pinned
+upstream revision. See [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
 
-To install the built app and start enforcement:
+**Do not run the real-system checks in `script/p3/` on a Mac you use.** They
+install a block and change the clock. They refuse to run unless
+`MASTBOUND_DISPOSABLE_MACHINE=1` is set.
 
-```sh
-./script/install.sh
-```
+## Documents
 
-To remove the app and its owned enforcement state:
+- [docs/commitment-invariants.md](docs/commitment-invariants.md): the rules
+  the code must keep.
+- [docs/rewrite-plan.md](docs/rewrite-plan.md): the design and phases.
+- [docs/verification.md](docs/verification.md): what was tested on a real
+  system, and what was not.
+- [docs/migration.md](docs/migration.md): moving a Mac from the old Screen
+  Time Roaster build.
+- [SECURITY.md](SECURITY.md): security rules and how to report a problem.
 
-```sh
-./script/uninstall.sh
-```
+## License
 
-## Release packaging
-
-`script/package_release.sh` creates a universal arm64 and x86_64 release app
-and ZIP archive without installing or publishing either artifact. It never
-selects a signing identity or notarization credentials implicitly.
-
-For a local unsigned packaging check:
-
-```sh
-./script/package_release.sh --unsigned
-```
-
-For a Developer ID release build, pass the exact identity explicitly:
-
-```sh
-./script/package_release.sh \
-  --sign-identity "Developer ID Application: Your Name (TEAMID)" \
-  --version 1.0.0 \
-  --build-number 1
-```
-
-That path applies the hardened runtime and a secure timestamp, then performs a
-deep strict code-signature verification. It does not contact Apple's notary
-service. To notarize, first create a `notarytool` keychain profile outside this
-repository, then opt in with its profile name:
-
-```sh
-./script/package_release.sh \
-  --sign-identity "Developer ID Application: Your Name (TEAMID)" \
-  --notary-profile "screen-time-roaster-release"
-```
-
-Only `--notary-profile` initiates notarization. The script does not accept or
-store raw Apple credentials. After acceptance it staples and validates the app,
-requires Gatekeeper assessment to pass, and recreates the ZIP with the stapled
-bundle. Release artifacts remain under ignored `dist/release/` until a separate,
-explicit publication step.
-
-## Safety properties
-
-- The root service accepts only strict domains and literal IP addresses.
-- It executes no user-controlled shell commands and never downloads data.
-- Privileged installation stages and verifies the app only in a root-owned,
-  non-group-writable directory before copying the helper.
-- Hosts-file edits are atomic and preserve every line outside its markers.
-- PF rules are loaded into one isolated anchor; the global ruleset is not
-  replaced.
-- Invalid configuration preserves existing enforcement instead of rewriting
-  system files from ambiguous input.
-- Internal enforcement state, including private endpoints, is root-readable
-  only.
-- The optional tool lane is unprivileged, read-only, domain-scoped, and never
-  changes enforcement state. Its ancestry check is deliberate habit friction,
-  not a security boundary against the logged-in user.
-- Uninstall clears both owned enforcement surfaces before removing the daemon.
-
-See [SECURITY.md](SECURITY.md) for the privileged-boundary policy.
+MIT. See [LICENSE](LICENSE). Mastbound uses ideas from
+[SelfControl](https://github.com/SelfControlApp/selfcontrol), but no
+SelfControl code.

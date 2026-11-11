@@ -119,7 +119,7 @@ waits a fixed delay (for example 24 h) before it clears. This gives a safe
 way out for real problems (wrong site blocked, Mac transfer) without a
 one-click unblock.
 
-## 6. Removal candidates for step 2
+## 6. Removal candidates for step 2 (all removed in P4)
 
 These do not serve the commitment goal. Removal also removes test burden.
 
