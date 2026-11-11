@@ -234,6 +234,59 @@ struct EngineCrashTests {
 
 @Suite("Engine: install, upgrade and uninstall")
 struct EngineInstallTests {
+    @Test("Install refuses a source folder that other users can write")
+    func installRefusesWritableSource() throws {
+        let f = try Fixture()
+        let build = try f.makeBuild(list: f.list)
+        #expect(chmod(build.directory.path, 0o777) == 0)
+        #expect(throws: MastboundError.self) {
+            try Installer.installFiles(from: build.directory, paths: f.paths, bundledListSHA256: build.sha)
+        }
+        #expect(!FileManager.default.fileExists(atPath: f.paths.installedDaemon.path))
+    }
+
+    @Test("Install refuses a source folder below a folder that other users can write")
+    func installRefusesWritableSourceParent() throws {
+        let f = try Fixture()
+        let parent = f.root.appendingPathComponent("shared", isDirectory: true)
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: false)
+        let build = try f.makeBuild(list: f.list)
+        let moved = parent.appendingPathComponent("build", isDirectory: true)
+        try FileManager.default.moveItem(at: build.directory, to: moved)
+        #expect(chmod(parent.path, 0o777) == 0)
+        #expect(throws: MastboundError.self) {
+            try Installer.installFiles(from: moved, paths: f.paths, bundledListSHA256: build.sha)
+        }
+        #expect(!FileManager.default.fileExists(atPath: f.paths.installedDaemon.path))
+    }
+
+    @Test("Install refuses a source daemon that other users can write")
+    func installRefusesWritableSourceFile() throws {
+        let f = try Fixture()
+        let build = try f.makeBuild(list: f.list)
+        #expect(chmod(build.directory.appendingPathComponent("mastboundd").path, 0o666) == 0)
+        #expect(throws: MastboundError.self) {
+            try Installer.installFiles(from: build.directory, paths: f.paths, bundledListSHA256: build.sha)
+        }
+        #expect(!FileManager.default.fileExists(atPath: f.paths.installedDaemon.path))
+    }
+
+    @Test("Install checks the real folder behind a symbolic link")
+    func installResolvesSourceLink() throws {
+        let f = try Fixture()
+        let parent = f.root.appendingPathComponent("shared", isDirectory: true)
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: false)
+        let build = try f.makeBuild(list: f.list)
+        let moved = parent.appendingPathComponent("build", isDirectory: true)
+        try FileManager.default.moveItem(at: build.directory, to: moved)
+        #expect(chmod(parent.path, 0o777) == 0)
+        let link = f.root.appendingPathComponent("link")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: moved)
+        #expect(throws: MastboundError.self) {
+            try Installer.installFiles(from: link, paths: f.paths, bundledListSHA256: build.sha)
+        }
+    }
+
     @Test("Install copies the build and writes a launchd plist that points at the helper folder (I8)")
     func installFiles() throws {
         let f = try Fixture()

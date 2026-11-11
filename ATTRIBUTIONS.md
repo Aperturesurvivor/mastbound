@@ -20,5 +20,16 @@ The list was changed from the sources: entries were merged, lowercased,
 deduplicated, sorted, and names that are not valid exact domains were
 removed. List inclusion does not mean every entry is correct.
 
-TODO before a public release: include the full MIT license notices of each
-MIT source and of StevenBlack/hosts in the app bundle (see P5).
+License texts are in `Resources/licenses/` and must ship with the list:
+
+| File | For |
+| --- | --- |
+| `StevenBlack-hosts.txt` | StevenBlack/hosts (MIT), revision above |
+| `bigdargon-hostsVN.txt` | BigDargon hostsVN (MIT) |
+| `Sinfonietta-hostfiles.txt` | both Sinfonietta lists (MIT) |
+| `tiuxo-hosts.txt` | Tiuxo (CC BY 4.0) |
+
+Open (decision D6 in `docs/distribution.md`): the Clefspeare13 repository is
+blocked by GitHub, so its MIT notice cannot be read, and the
+brijrajparmar27 repository has no license file. Their licenses above come
+from StevenBlack's `update.json` metadata only.

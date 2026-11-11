@@ -184,3 +184,44 @@ Commits `cc71ecf`…`9080326`. Full results: `docs/verification.md`.
 - `Assets/` (app icon) is kept for the UI.
 - No release packaging script exists now. P5 decides how to package.
 - P3 reboot, power-cut, sleep and browser checks are still open.
+
+## P5 Distribution — 2026-11-11
+
+Decision note: `docs/distribution.md` (with sources).
+
+### Decisions
+
+- **No Mac App Store.** Guideline 2.4.5 (i), (ii) and (v) forbid sandbox-free
+  apps, installs into shared locations, and root.
+- **Ship a Developer ID-signed, notarized DMG** from GitHub Releases. Needs
+  the $99/year Apple Developer Program. Until then, source only.
+- **Keep the installer-written launchd plist.** `SMAppService` runs the
+  daemon from inside the app bundle, so deleting the app would stop the
+  block (I8).
+
+### Code changes
+
+- **Install-source fix.** `Installer.requireTrustedSource` resolves the
+  source folder and requires it and all folders above it to be owned by root
+  (or the test owner) and not writable by others; source files must be owned
+  by root. 4 new tests (88 total). With the check removed, 3 of them fail
+  (the 4th, a world-writable file, was already refused by `FileStore.read`).
+- `script/p3/real-system-check.sh` stages both builds into a root-owned
+  `/usr/local/mastbound-p3` and adds S0/S0a: install from a user-owned build
+  is refused and leaves nothing installed.
+- `Resources/licenses/` with 4 license texts; `ATTRIBUTIONS.md` updated.
+
+### Found
+
+- **New bypass to document:** the "Allow in the Background" switch in Login
+  Items can stop launch daemons. Added to README limits and the P3 open
+  checks.
+- **License gap (D6):** Clefspeare13's repo is blocked by GitHub (about
+  13,300 domains only it adds); brijrajparmar27 has no license file (about
+  160).
+
+### Not done
+
+- No signing, notarization or DMG (no account, no app yet).
+- The license texts are in the repo but not yet in a bundle; there is no
+  bundle until P6.

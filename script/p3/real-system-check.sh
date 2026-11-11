@@ -35,6 +35,18 @@ STATE_DIR="/Library/Application Support/Mastbound"
 PLIST="/Library/LaunchDaemons/$LABEL.plist"
 PHRASE="I want to end my commitment early"
 MARKER="# BEGIN MASTBOUND — MANAGED BLOCK"
+USER_BUILD="$BUILD"
+# The installer only copies from a root-owned folder (SECURITY.md rule 9), as
+# an app would after it stages its Resources folder. Stage both builds.
+STAGE="/usr/local/mastbound-p3"
+sudo rm -rf "$STAGE"
+sudo mkdir -p "$STAGE"
+sudo cp -R "$BUILD" "$STAGE/build"
+sudo cp -R "$UPGRADE" "$STAGE/upgrade"
+sudo chown -R root:wheel "$STAGE"
+sudo chmod -R go-w "$STAGE"
+BUILD="$STAGE/build"
+UPGRADE="$STAGE/upgrade"
 CTL="$BUILD/mastboundctl"
 ICTL="$HELPER/mastboundctl"
 FAILS=0
@@ -113,6 +125,8 @@ record P0a "test domain resolves normally before the block" "$([[ -n "$DOMAIN" ]
 stop_if_failed P0a
 
 # --- Start -----------------------------------------------------------------
+check S0 "install from a user-owned build folder is refused" refused_with "is not trusted" sudo "$USER_BUILD/mastboundctl" start --minutes 30
+check S0a "nothing installed after the refusal" gone "$PLIST"
 check S1 "start installs and blocks" sudo "$CTL" start --minutes 30
 check S1a "daemon running under launchd" wait_until 20 daemon_running
 record S1b "hosts section has every domain (v4+v6)" "$(section_complete && echo PASS || echo FAIL)" "$(section_lines) of $EXPECTED_LINES lines"
@@ -163,13 +177,11 @@ check S5b "second start is refused" refused_with "already running" sudo "$ICTL" 
 check S5c "recovery with a wrong phrase is refused" refused_with "phrase does not match" sudo "$ICTL" recover --confirm "let me out"
 
 # --- Delete the app --------------------------------------------------------
-COPY="$(mktemp -d)/mastbound"
-cp -R "$BUILD" "$COPY"
-rm -rf "$BUILD"
+sudo mv "$BUILD" "$STAGE/build.moved"
 sleep 6
 check S6 "source build deleted: daemon still running" daemon_running
 check S6a "source build deleted: block still in place" has_section
-cp -R "$COPY" "$BUILD"
+sudo mv "$STAGE/build.moved" "$BUILD"
 
 # --- Upgrade ---------------------------------------------------------------
 STARTED_BEFORE="$(sudo /usr/bin/plutil -extract commitment.startedAt raw -o - "$STATE_DIR/state.json")"
@@ -217,6 +229,8 @@ record S12c "hosts file exactly as before" "$([[ "$(hosts_sha)" == "$ORIGINAL_HO
 ERRORS="$(log show --last 30m --predicate 'subsystem == "com.josiahwilson.mastbound"' --style compact 2>/dev/null | grep -c 'Reconcile failed' || true)"
 record S13 "daemon log: reconcile failures" "$([[ "$ERRORS" == 0 ]] && echo PASS || echo FAIL)" "$ERRORS failures logged"
 record S13a "daemon log: versions started" NOTE "$(log show --last 30m --predicate 'subsystem == "com.josiahwilson.mastbound"' --style compact 2>/dev/null | grep -o 'mastboundd [^ ]* started[^"]*' | sort | uniq -c | tr '\n' ';')"
+
+sudo rm -rf "$STAGE"
 
 echo
 echo "Failures: $FAILS"

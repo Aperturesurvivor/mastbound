@@ -58,6 +58,8 @@ These need a local macOS VM (GitHub runners cannot reboot), or a person.
 | Reboot keeps the block; time off is counted | Runner cannot reboot | VM: start, `sudo shutdown -r now`, check status and credit |
 | Hard power-off mid-write | Needs a VM to cut power | VM: stop the VM process during a tick, boot, check state is valid |
 | Sleep and wake | Not supported in CI | VM or real Mac |
+| "Allow in the Background" switch in Login Items stops the daemon; admin password needed?; block stays in `/etc/hosts`? | Needs a GUI | Manual in a VM |
+| Install refused from a user-owned build (S0, S0a) | Added in P5, not run yet | Next `real-system` run |
 | Browsers: Safari, Chrome, Firefox (DNS-over-HTTPS), iCloud Private Relay, VPN | Needs a GUI and accounts | Manual in a VM |
 | Real `.app` bundle, admin password prompt, Gatekeeper and notarization | No app yet (P5/P6) | After P5 |
 | Intel Macs | Runner is Apple silicon only | Optional |

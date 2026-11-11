@@ -20,11 +20,11 @@ repository-wide security rules:
    each time the daemon sees the file change. Changing the list is a code-review action.
 8. The installer refuses source files that are not Mach-O executables, and
    refuses target folders that other users can write.
-9. Public release is blocked until the open checks in
-   `docs/verification.md` pass and the install source is protected (known
-   risk: `mastboundctl install` copies `mastboundd` from its own folder,
-   which may be user-writable; fix with code signing or a root-owned source
-   check).
+9. The install source folder, every folder above it, and its files must be
+   owned by root and not writable by other users, because root copies and
+   runs `mastboundd` from it (`Installer.requireTrustedSource`).
+10. Public release is blocked until the open checks in
+    `docs/verification.md` pass.
 
 Report suspected vulnerabilities privately through a
 [GitHub security advisory](https://github.com/Aperturesurvivor/Screen-Time-Roaster/security/advisories/new).

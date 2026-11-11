@@ -45,6 +45,7 @@ there is no time with no block.
    `SECURITY.md`):
    - `sudo cp -R dist/mastbound /usr/local/mastbound-install`
    - `sudo chown -R root:wheel /usr/local/mastbound-install`
+   - `sudo chmod -R go-w /usr/local/mastbound-install`
 3. Choose the commitment length.
 4. Start the new commitment: `sudo /usr/local/mastbound-install/mastboundctl start --days N`.
 5. Check: `mastboundctl status` shows `active`, and

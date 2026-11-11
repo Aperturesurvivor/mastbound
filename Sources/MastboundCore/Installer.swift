@@ -8,21 +8,24 @@ public enum Installer {
     public static let executableNames = ["mastboundd", "mastboundctl"]
 
     /// - Parameter sourceDirectory: folder that holds `mastboundd`,
-    ///   `mastboundctl` and `adult-domains.txt` (the app's Resources folder,
-    ///   or a build folder).
+    ///   `mastboundctl` and `adult-domains.txt`. It must be a trusted
+    ///   folder (see `requireTrustedSource`), for example a root-owned copy
+    ///   of the app's Resources folder. A build folder in a home folder is
+    ///   refused on the real system.
     public static func installFiles(from sourceDirectory: URL, paths: Paths, bundledListSHA256: String) throws {
         // Check everything before changing anything.
+        let source = try requireTrustedSource(sourceDirectory, paths: paths)
         let listData = try FileStore.read(
-            at: sourceDirectory.appendingPathComponent(Paths.listFileName),
-            expectedOwner: nil, maximumSize: Blocklist.maximumBytes
+            at: source.appendingPathComponent(Paths.listFileName),
+            expectedOwner: paths.owner, maximumSize: Blocklist.maximumBytes
         )
         _ = try Blocklist.load(listData, expectedSHA256: bundledListSHA256)
         var executables: [(name: String, data: Data)] = []
         for name in executableNames {
-            let source = sourceDirectory.appendingPathComponent(name)
-            let data = try FileStore.read(at: source, expectedOwner: nil, maximumSize: 64 * 1024 * 1024)
+            let file = source.appendingPathComponent(name)
+            let data = try FileStore.read(at: file, expectedOwner: paths.owner, maximumSize: 64 * 1024 * 1024)
             guard data.starts(with: [0xCF, 0xFA, 0xED, 0xFE]) || data.starts(with: [0xCA, 0xFE, 0xBA, 0xBE]) else {
-                throw MastboundError.unsafeFile("\(source.path) is not a Mach-O executable.")
+                throw MastboundError.unsafeFile("\(file.path) is not a Mach-O executable.")
             }
             executables.append((name, data))
         }
@@ -91,6 +94,42 @@ public enum Installer {
             }
         }
         guard chmod(url.path, 0o755) == 0 else { throw MastboundError.posix(url, "set the mode of") }
+    }
+
+    /// Root copies `mastboundd` from the source folder and later runs it. If
+    /// another user could change that folder or its files, they could get
+    /// their code run as root. So the resolved folder and every folder above
+    /// it must be owned by root or `paths.owner` and not writable by other
+    /// users (a sticky folder such as `/tmp` is allowed). The files are
+    /// checked for owner and mode when they are read. Returns the resolved
+    /// folder, so the checked path is the path that is read.
+    static func requireTrustedSource(_ directory: URL, paths: Paths) throws -> URL {
+        guard let resolved = realpath(directory.path, nil) else { throw MastboundError.posix(directory, "resolve") }
+        defer { free(resolved) }
+        let source = URL(fileURLWithPath: String(cString: resolved), isDirectory: true)
+        var current = source
+        while true {
+            var fileStat = stat()
+            guard lstat(current.path, &fileStat) == 0 else { throw MastboundError.posix(current, "inspect") }
+            guard (fileStat.st_mode & S_IFMT) == S_IFDIR else {
+                throw MastboundError.unsafeFile("\(current.path) is not a folder.")
+            }
+            guard fileStat.st_uid == 0 || fileStat.st_uid == paths.owner else {
+                throw MastboundError.unsafeFile(
+                    "Install source \(source.path) is not trusted: \(current.path) has another owner. Copy the build to a root-owned folder first."
+                )
+            }
+            let writableByOthers = (fileStat.st_mode & 0o022) != 0
+            let sticky = (fileStat.st_mode & S_ISVTX) != 0
+            guard !writableByOthers || (sticky && current != source) else {
+                throw MastboundError.unsafeFile(
+                    "Install source \(source.path) is not trusted: \(current.path) is writable by other users. Copy the build to a root-owned folder first."
+                )
+            }
+            if current.path == "/" { break }
+            current = current.deletingLastPathComponent()
+        }
+        return source
     }
 
     /// Allows the sticky bit (as on `/tmp`), which stops others from

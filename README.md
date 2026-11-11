@@ -81,8 +81,9 @@ skip them. This command will not be in the app.
 
 - **An administrator can remove the block at any time.** For example,
   `sudo launchctl bootout system/com.josiahwilson.mastbound` stops the
-  service, and then `/etc/hosts` can be edited by hand. Mastbound cannot
-  stop this.
+  service, and then `/etc/hosts` can be edited by hand. The "Allow in the
+  Background" switch in System Settings → General → Login Items can also
+  stop the service. Mastbound cannot stop this.
 - macOS Recovery, or another Mac with the disk attached, can edit
   `/etc/hosts`.
 - A clock change made while the Mac is off is accepted. After a restart the
@@ -108,6 +109,15 @@ full Xcode is not needed.
 ./script/build-cli.sh            # builds into dist/mastbound
 ```
 
+`mastboundctl install` and `start` copy files that root will run, so they
+refuse a build folder that is not root-owned. Copy the build first:
+
+```sh
+sudo cp -R dist/mastbound /usr/local/mastbound-install
+sudo chown -R root:wheel /usr/local/mastbound-install
+sudo chmod -R go-w /usr/local/mastbound-install
+```
+
 `script/make-list.sh` rebuilds `Resources/adult-domains.txt` from a pinned
 upstream revision. See [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
 
@@ -122,6 +132,8 @@ install a block and change the clock. They refuse to run unless
 - [docs/rewrite-plan.md](docs/rewrite-plan.md): the design and phases.
 - [docs/verification.md](docs/verification.md): what was tested on a real
   system, and what was not.
+- [docs/distribution.md](docs/distribution.md): App Store, signing,
+  notarization and daemon registration.
 - [docs/migration.md](docs/migration.md): moving a Mac from the old Screen
   Time Roaster build.
 - [SECURITY.md](SECURITY.md): security rules and how to report a problem.

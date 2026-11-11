@@ -149,7 +149,7 @@ Each phase ends at a review gate.
 | P2 Daemon + CLI ✅ | `mastboundd`, `mastboundctl`, launchd plist; integration tests in a temp folder: failed writes, missing files, crash between writes, upgrade keeps state. | Done 2026-11-10: 28 integration tests, CI run 42909361462. Limits in `docs/phase-reports.md`. |
 | P3 Real system 🟡 | Free macOS VM (UTM on Apple silicon). Scripted checklist: install, start, reboot, delete app, change clock, edit `/etc/hosts` by hand, upgrade, recover, expiry, uninstall. Record actual results. | Partly done 2026-11-10: 52 checks pass on a GitHub macOS runner (`docs/verification.md`). Reboot, power cut, sleep and browsers still need a local VM. |
 | P4 Cleanup ✅ | Remove old code, write README limits (§5 of invariants), plan this Mac's migration (D5). | Done 2026-11-11: legacy targets removed, 84 tests. README limits, `docs/migration.md`. |
-| P5 Distribution | Research signing, notarization, DMG, `SMAppService`, App Store rules (to-do step 4). | Short decision note with sources. |
+| P5 Distribution ✅ | Research signing, notarization, DMG, `SMAppService`, App Store rules (to-do step 4). | Done 2026-11-11: `docs/distribution.md`. Install-source fix, license texts. D6 open. |
 | P6 UI | Josiah builds the one-screen UI with AI tools against the §4.4 contract. | Josiah's call. |
 
 ## 7. Open questions
@@ -158,6 +158,7 @@ Each phase ends at a review gate.
   uninstall the old build. No conversion code. See `docs/migration.md`.
 - **Repo name.** The repo is still `Screen-Time-Roaster`. Rename to
   `mastbound` now or after v1?
-- **Daemon registration.** A launchd plist written by the installer works
-  without a paid Apple Developer account. `SMAppService` is the modern way but
-  needs a signed app. Decide in P5; P2 uses the plist.
+- **Daemon registration.** Decided in P5: keep the plist written by the
+  installer. `SMAppService` keeps the daemon inside the app, which breaks I8.
+- **D6, list licenses.** Keep or drop the Clefspeare13 and brijrajparmar27
+  sources. See `docs/distribution.md` §5.
