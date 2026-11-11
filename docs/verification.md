@@ -62,4 +62,7 @@ These need a local macOS VM (GitHub runners cannot reboot), or a person.
 | Real `.app` bundle, admin password prompt, Gatekeeper and notarization | No app yet (P5/P6) | After P5 |
 | Intel Macs | Runner is Apple silicon only | Optional |
 
-A local VM needs about 40 GB free. This Mac has about 11 GB free.
+A local VM needs about 45 GB free (24 GB image plus room for its 50 GB
+sparse disk to grow). On 2026-11-11, after a cleanup, this Mac had about
+35 GB free. These checks stay open until a Mac or an external APFS drive
+with enough space is available. They must pass before a public release.
