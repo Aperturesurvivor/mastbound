@@ -59,7 +59,6 @@ These need a local macOS VM (GitHub runners cannot reboot), or a person.
 | Hard power-off mid-write | Needs a VM to cut power | VM: stop the VM process during a tick, boot, check state is valid |
 | Sleep and wake | Not supported in CI | VM or real Mac |
 | "Allow in the Background" switch in Login Items stops the daemon; admin password needed?; block stays in `/etc/hosts`? | Needs a GUI | Manual in a VM |
-| Install refused from a user-owned build (S0, S0a) | Added in P5, not run yet | Next `real-system` run |
 | Browsers: Safari, Chrome, Firefox (DNS-over-HTTPS), iCloud Private Relay, VPN | Needs a GUI and accounts | Manual in a VM |
 | Real `.app` bundle, admin password prompt, Gatekeeper and notarization | No app yet (P5/P6) | After P5 |
 | Intel Macs | Runner is Apple silicon only | Optional |
@@ -68,3 +67,10 @@ A local VM needs about 45 GB free (24 GB image plus room for its 50 GB
 sparse disk to grow). On 2026-11-11, after a cleanup, this Mac had about
 35 GB free. These checks stay open until a Mac or an external APFS drive
 with enough space is available. They must pass before a public release.
+
+## Run 3 — 2026-11-11 (P5)
+
+CI run 43111667292 on a GitHub macOS runner. 0 failures. New checks S0 and
+S0a pass: `sudo mastboundctl start` from a user-owned build folder is refused
+with "Install source … is not trusted", and nothing is installed. All
+earlier checks still pass with both builds staged in a root-owned folder.
