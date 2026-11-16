@@ -74,3 +74,28 @@ CI run 43111667292 on a GitHub macOS runner. 0 failures. New checks S0 and
 S0a pass: `sudo mastboundctl start` from a user-owned build folder is refused
 with "Install source … is not trusted", and nothing is installed. All
 earlier checks still pass with both builds staged in a root-owned folder.
+
+## Runs 4–7 — 2026-11-16 (early-end changes)
+
+| Run | Commit | Result |
+| --- | --- | --- |
+| 43… (run 4) | `5f6ae05` | 3 failures. New password-free cancel checks (S10c1–S10c3) pass. **Hosts repair after a hand edit was slow** (S2a, S2b, S3a). |
+| run 5 | `556ddd0` | Same 3 failures. Diagnostics: section still missing after 136 s, daemon running, nothing in its log. |
+| run 6 | `dc88ad3` | Repair passed (fault is intermittent). S11d failed: a test race, the check ran before the daemon removed the locked list. |
+| run 7 | `969e2a3` | **0 failures.** Repair checked 6 times, each within 1 s. |
+
+**Cause (likely, not proven):** the daemon waited with no time limit for
+`dscacheutil -flushcache` and `killall -HUP mDNSResponder`. A hung flush
+stops the whole loop, which fits "running, no error, no repair". Fix:
+every system command now has a time limit and is killed after it (5 s for
+the flush), with a unit test. The stack sample (S2w) was added but did not
+trigger in run 7, so the cause is not confirmed. The repeated repair check
+(S2r1–S2r5) stays in the checklist to catch it.
+
+## Local VM — 2026-11-16
+
+`script/p3/vm-check.sh` could not start: the `macos-tahoe-vanilla` image
+has no Tart guest agent, so `tart exec` never connects (checked for 400 s
+on a fresh clone). Reboot, power-cut and sleep checks are still open.
+Options: log in once to install an SSH key, or use an image with the agent.
+
