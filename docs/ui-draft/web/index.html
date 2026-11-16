@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mastbound UI draft</title>
+<meta name="color-scheme" content="dark">
+<style>
+  :root {
+    --bg: #0E0F11; --surface: #17181B; --raised: #1F2024;
+    --stroke: rgba(255,255,255,.08); --text: #F2F2F3; --text2: #8B8D93; --text3: #5F6166;
+    --accent: #7ED1B8; --warn: #EDBB6B; --r: 12px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: #050506; color: var(--text);
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif; }
+  body { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: 16px; gap: 14px; }
+  .window { width: 100%; max-width: 400px; height: 560px; background: var(--bg); border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.07); box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .lights { display: flex; gap: 8px; padding: 12px 14px 0; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; background: #3a3b3f; display: block; }
+  header { padding: 10px 28px 8px; display: flex; align-items: center; justify-content: space-between; }
+  header b { font-size: 13px; font-weight: 600; color: var(--text2); }
+  .demo { font-size: 11px; color: var(--text3); }
+  main { flex: 1; padding: 0 28px 28px; display: flex; flex-direction: column; }
+  .grow { flex: 1; min-height: 12px; }
+  h1 { font-size: 28px; font-weight: 600; line-height: 1.15; margin: 0; letter-spacing: -.2px; }
+  .lead { color: var(--text2); font-size: 13px; line-height: 1.55; margin: 10px 0 0; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .8px; color: var(--text3); text-transform: uppercase; }
+  .presets { display: flex; gap: 6px; margin-top: 10px; }
+  .preset { flex: 1; height: 34px; border-radius: 9px; border: 1px solid var(--stroke); background: var(--surface);
+    color: var(--text); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; padding: 0; }
+  .preset.on { background: var(--text); color: var(--bg); border-color: transparent; font-weight: 600; }
+  .stepper { margin-top: 8px; height: 44px; border-radius: var(--r); background: var(--surface);
+    border: 1px solid var(--stroke); display: flex; align-items: center; padding: 0 6px 0 14px; }
+  .stepper span.l { color: var(--text2); font-size: 13px; flex: 1; }
+  .stepper .v { min-width: 72px; text-align: center; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .round { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--raised); color: var(--text);
+    font-size: 16px; cursor: pointer; display: grid; place-items: center; }
+  .round:disabled { opacity: .35; }
+  .dur { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+  .dur .num { font-size: 56px; font-weight: 200; line-height: 1; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+  .dur .unit { font-size: 17px; color: var(--text2); }
+  .slider { position: relative; height: 36px; margin-top: 14px; }
+  .track { position: absolute; left: 13px; right: 13px; top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; background: var(--raised); overflow: hidden; }
+  .fill { height: 100%; background: var(--text); border-radius: 3px; }
+  .slider input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; background: transparent;
+    -webkit-appearance: none; appearance: none; cursor: pointer; touch-action: none; }
+  .slider input:focus { outline: none; }
+  .slider input::-webkit-slider-runnable-track { height: 36px; background: transparent; }
+  .slider input::-moz-range-track { height: 36px; background: transparent; }
+  .slider input::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: 5px; border-radius: 50%;
+    background: var(--text); border: 0; box-shadow: 0 0 0 6px rgba(242,242,243,.08), 0 2px 8px rgba(0,0,0,.5); transition: box-shadow .12s; }
+  .slider input:active::-webkit-slider-thumb { box-shadow: 0 0 0 10px rgba(242,242,243,.12), 0 2px 8px rgba(0,0,0,.5); }
+  .slider input::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: var(--text); border: 0;
+    box-shadow: 0 0 0 6px rgba(242,242,243,.08), 0 2px 8px rgba(0,0,0,.5); }
+  .ticks { position: relative; height: 22px; margin: 4px 13px 0; }
+  .tick { position: absolute; transform: translateX(-50%); background: none; border: 0; padding: 4px 6px; font: inherit;
+    font-size: 11px; color: var(--text3); cursor: pointer; }
+  .tick.on { color: var(--text2); }
+  .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 14px; }
+  .row .k { color: var(--text2); } .row .v { font-variant-numeric: tabular-nums; }
+  .btn { width: 100%; min-height: 44px; border-radius: var(--r); font: inherit; font-size: 14px; cursor: pointer;
+    transition: opacity .12s, background .12s; }
+  .primary { background: var(--text); color: var(--bg); border: 0; font-weight: 600; }
+  .primary:active { opacity: .8; } .primary:disabled { opacity: .3; }
+  .secondary { background: var(--surface); color: var(--text); border: 1px solid var(--stroke); font-weight: 500; }
+  .secondary:active { background: var(--raised); } .secondary:disabled { opacity: .35; }
+  .hint { text-align: center; font-size: 11px; color: var(--text3); margin-top: 10px; }
+  .hint.warn { color: var(--warn); }
+  .center { align-items: center; text-align: center; }
+  .big { font-size: 88px; font-weight: 200; line-height: 1; margin-top: 22px; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
+  .sub { color: var(--text2); font-size: 13px; margin-top: 6px; }
+  .clock { font-size: 22px; color: var(--text2); margin-top: 14px; font-variant-numeric: tabular-nums; }
+  .clock.solo { font-size: 56px; font-weight: 200; color: var(--text); margin-top: 22px; letter-spacing: -1px; }
+  .ends { font-size: 12px; color: var(--text2); margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .note { margin-top: 24px; font-size: 12px; color: var(--text2); line-height: 1.55; max-width: 280px; align-self: center; }
+  .addrow { display: flex; gap: 6px; margin-top: 8px; }
+  .addrow .btn { font-size: 13px; }
+  .link { background: none; border: 0; color: var(--text2); font: inherit; font-size: 12px; margin-top: 8px; cursor: pointer; }
+  .problem { justify-content: center; align-items: center; text-align: center; gap: 12px; color: var(--text2); font-size: 13px; }
+  .problem .ico { color: var(--warn); font-size: 28px; }
+  /* Fake macOS password sheet */
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; padding: 24px; }
+  .scrim.show { display: flex; }
+  .sheet { width: 100%; background: #26272b; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 18px;
+    text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+  .sheet h3 { margin: 6px 0 4px; font-size: 13px; } .sheet p { margin: 0 0 12px; font-size: 11px; color: var(--text2); }
+  .sheet .fake { height: 28px; border-radius: 6px; background: #1b1c1f; border: 1px solid rgba(255,255,255,.1);
+    color: var(--text3); font-size: 11px; display: flex; align-items: center; padding: 0 8px; margin-bottom: 12px; }
+  .sheet .btns { display: flex; gap: 8px; } .sheet .btns button { flex: 1; height: 28px; border-radius: 6px; border: 0;
+    font: inherit; font-size: 12px; cursor: pointer; background: #3a3b40; color: var(--text); }
+  .sheet .btns .ok { background: #0A84FF; color: #fff; }
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(14,15,17,.25); border-top-color: var(--bg); border-radius: 50%;
+    display: inline-block; animation: spin .7s linear infinite; vertical-align: -3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .fade { animation: fade .18s ease-out; } @keyframes fade { from { opacity: 0; transform: translateY(4px); } }
+  /* Reviewer controls, outside the window */
+  .controls { width: 100%; max-width: 400px; color: var(--text3); font-size: 12px; }
+  .controls .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .controls button { background: #141518; color: var(--text2); border: 1px solid var(--stroke); border-radius: 99px;
+    padding: 6px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+  @media (max-width: 380px) { main { padding: 0 18px 22px; } header { padding: 10px 18px 8px; } .preset { font-size: 11px; } }
+</style>
+</head>
+<body>
+  <div class="window" id="win">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <header><b>Mastbound</b><span class="demo">Demo</span></header>
+    <main id="main"></main>
+    <div class="scrim" id="scrim">
+      <div class="sheet">
+        <div style="font-size:26px">🔒</div>
+        <h3>Mastbound wants to make changes.</h3>
+        <p>Enter your password to allow this.<br>(Mock only. Nothing is sent or installed.)</p>
+        <div class="fake">Password</div>
+        <div class="btns"><button id="pwCancel">Cancel</button><button class="ok" id="pwOk">OK</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    Review controls (not part of the app). Jump to a screen:
+    <div class="chips">
+      <button data-go="idle">Start</button>
+      <button data-go="active">Active (30 days)</button>
+      <button data-go="lastday">Last day</button>
+      <button data-go="recovering">Ending early</button>
+      <button data-go="problem">Problem</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const DAY = 86400, MAX = 365 * DAY;
+  // Slider stops: fine at the short end, wider at the long end.
+  const STOPS = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 30, 45, 60, 90, 120, 150, 180, 240, 300, 365];
+  const TICKS = [[1, "1d"], [7, "1w"], [30, "1m"], [90, "3m"], [180, "6m"], [365, "1y"]];
+  const pct = i => i / (STOPS.length - 1) * 100;
+  // Big number and unit: weeks and months read better than "90 days".
+  const split = d => d === 365 ? ["1", "year"] : d % 30 === 0 && d >= 60 ? [String(d / 30), "months"]
+    : d === 30 ? ["1", "month"] : d % 7 === 0 && d >= 14 ? [String(d / 7), "weeks"] : d === 7 ? ["1", "week"]
+    : [String(d), d === 1 ? "day" : "days"];
+  const title = d => d === 1 ? "1 day" : d === 7 ? "1 week" : d === 365 ? "1 year" : d + " days";
+  const longTitle = d => { const [n, u] = split(d); return n + " " + u; };
+  const s = { phase: "idle", days: 30, confirming: false, busy: false, endAt: 0, recoveryEndAt: 0, adding: false };
+  const main = document.getElementById("main");
+  const scrim = document.getElementById("scrim");
+  let pending = null;
+
+  const fmtEnd = t => new Date(t).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  const fmtEndShort = t => new Date(t).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  const pad = n => String(n).padStart(2, "0");
+  const remaining = () => Math.max(0, (s.endAt - Date.now()) / 1000);
+
+  function askPassword(action) { pending = action; scrim.classList.add("show"); }
+  document.getElementById("pwCancel").onclick = () => { scrim.classList.remove("show"); pending = null; };
+  document.getElementById("pwOk").onclick = () => {
+    scrim.classList.remove("show");
+    const action = pending; pending = null;
+    s.busy = true; render();
+    setTimeout(() => { s.busy = false; action(); render(); }, 700);
+  };
+
+  function renderIdle() {
+    const end = Date.now() + s.days * DAY * 1000;
+    main.innerHTML = `
+      <div class="grow"></div>
+      <h1>How long do you<br>want to commit?</h1>
+      <p class="lead">Adult sites stay blocked for the whole time, even after a restart or if you delete the app.</p>
+      <div class="grow" style="min-height:24px"></div>
+      <div class="label">Duration</div>
+      <div class="dur"><span class="num" id="durNum"></span><span class="unit" id="durUnit"></span></div>
+      <div class="slider">
+        <div class="track"><div class="fill" id="fill"></div></div>
+        <input type="range" id="range" min="0" max="${STOPS.length - 1}" step="1" value="${STOPS.indexOf(s.days)}" aria-label="Duration">
+      </div>
+      <div class="ticks">${TICKS.map(([d, l]) => `<button class="tick" data-d="${d}" style="left:${pct(STOPS.indexOf(d))}%">${l}</button>`).join("")}</div>
+      <div class="grow" style="min-height:24px"></div>
+      <div class="row"><span class="k">Ends</span><span class="v">${fmtEndShort(end)}</span></div>
+      <button class="btn primary" id="start" ${s.busy ? "disabled" : ""}>${s.busy ? '<span class="spinner"></span>' : s.confirming ? `Confirm — start ${longTitle(s.days)}` : "Start"}</button>
+      <div class="hint ${s.confirming ? "warn" : ""}">${s.confirming ? "There is no way to end it early from the app." : "You will be asked for your Mac password."}</div>`;
+    const range = main.querySelector("#range");
+    range.oninput = () => { s.days = STOPS[+range.value]; s.confirming = false; updateIdle(); };
+    main.querySelectorAll(".tick").forEach(t => t.onclick = () => { s.days = +t.dataset.d; s.confirming = false; render(); });
+    updateIdle();
+    main.querySelector("#start").onclick = () => {
+      if (!s.confirming) { s.confirming = true; render(); return; }
+      s.confirming = false;
+      askPassword(() => { s.phase = "active"; s.endAt = Date.now() + s.days * DAY * 1000; });
+    };
+  }
+
+  // Update the parts that change while dragging, without rebuilding the
+  // slider (a rebuild would drop the drag).
+  function updateIdle() {
+    const i = STOPS.indexOf(s.days);
+    const [num, unit] = split(s.days);
+    main.querySelector("#durNum").textContent = num;
+    main.querySelector("#durUnit").textContent = unit;
+    main.querySelector("#fill").style.width = pct(i) + "%";
+    main.querySelector("#range").value = i;
+    main.querySelector(".row .v").textContent = fmtEndShort(Date.now() + s.days * DAY * 1000);
+    main.querySelectorAll(".tick").forEach(t => t.classList.toggle("on", +t.dataset.d <= s.days));
+    const btn = main.querySelector("#start");
+    if (!s.busy && !s.confirming) {
+      btn.textContent = "Start";
+      const hint = main.querySelector(".hint");
+      hint.classList.remove("warn");
+      hint.textContent = "You will be asked for your Mac password.";
+    }
+  }
+
+  function renderActive() {
+    const r = remaining();
+    const recovering0 = s.phase === "recovering";
+    const rr0 = Math.max(0, (s.recoveryEndAt - Date.now()) / 1000);
+    // During an early end, count down to when the block really ends.
+    const total = Math.floor(recovering0 ? rr0 : r);
+    const days = Math.floor(total / DAY), h = Math.floor(total % DAY / 3600), m = Math.floor(total % 3600 / 60), sec = total % 60;
+    const recovering = s.phase === "recovering";
+    const rr = Math.max(0, (s.recoveryEndAt - Date.now()) / 1000);
+    const canAdd = d => r + d * DAY <= MAX;
+    main.className = "center";
+    main.innerHTML = `
+      <div class="grow"></div>
+      <div class="label" style="text-align:center;${recovering ? "color:var(--warn)" : ""}">${recovering ? "Ending early" : "Time left"}</div>
+      ${days > 0 ? `<div class="big" style="margin-top:14px">${days}</div><div class="sub">${days === 1 ? "day left" : "days left"}</div>
+        <div class="clock">${pad(h)}:${pad(m)}:${pad(sec)}</div>`
+        : `<div class="clock solo" style="margin-top:14px">${pad(h)}:${pad(m)}:${pad(sec)}</div>`}
+      <div class="ends">Ends ${fmtEnd(recovering ? s.recoveryEndAt : s.endAt)}</div>
+      ${recovering ? `<div class="note">Your commitment had ${Math.floor(r / DAY)} days left.</div>` : ""}
+      <div class="grow" style="min-height:24px"></div>
+      ${recovering ? `<button class="btn primary" id="keep" ${s.busy ? "disabled" : ""} style="margin-bottom:8px">${s.busy ? "Keeping it…" : "Keep my commitment"}</button>` : ""}
+      ${s.adding ? `<div class="${s.justOpened ? "fade" : ""}"><div class="label">Add time</div>
+          <div class="addrow">${[1, 7, 30].map(d => `<button class="btn secondary" data-add="${d}" ${canAdd(d) ? "" : "disabled"}>+ ${title(d)}</button>`).join("")}</div>
+          <button class="link" id="cancelAdd">Cancel</button></div>`
+        : `<button class="btn secondary" id="add" ${s.busy ? "disabled" : ""}>${s.busy ? "Adding…" : "Add time"}</button>`}
+      <div class="hint" style="margin-top:12px">Blocking adult sites on this Mac.</div>`;
+    const keep = main.querySelector("#keep");
+    if (keep) keep.onclick = () => { s.busy = true; render(); setTimeout(() => { s.busy = false; s.phase = "active"; render(); }, 600); };
+    const add = main.querySelector("#add"); if (add) add.onclick = () => { s.adding = true; s.justOpened = true; render(); };
+    s.justOpened = false;
+    const cancel = main.querySelector("#cancelAdd"); if (cancel) cancel.onclick = () => { s.adding = false; render(); };
+    main.querySelectorAll("[data-add]").forEach(b => b.onclick = () => {
+      const d = +b.dataset.add; s.adding = false;
+      askPassword(() => { s.endAt += d * DAY * 1000; });
+      render();
+    });
+  }
+
+  function renderProblem() {
+    main.className = "problem";
+    main.innerHTML = `<div class="ico">⚠︎</div><div>Mastbound could not read its status.<br>The block, if any, stays on.</div>`;
+  }
+
+  function render() {
+    main.className = "";
+    if (s.phase === "idle") renderIdle();
+    else if (s.phase === "problem") renderProblem();
+    else { if (remaining() <= 0) { s.phase = "idle"; renderIdle(); } else renderActive(); }
+  }
+
+  document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+    const now = Date.now(); s.adding = false; s.confirming = false; s.busy = false;
+    switch (b.dataset.go) {
+      case "idle": s.phase = "idle"; break;
+      case "active": s.phase = "active"; s.endAt = now + (29 * DAY + 13 * 3600 + 42 * 60) * 1000; break;
+      case "lastday": s.phase = "active"; s.endAt = now + (5 * 3600 + 17 * 60 + 33) * 1000; break;
+      case "recovering": s.phase = "recovering"; s.endAt = now + (12 * DAY + 2 * 3600) * 1000; s.recoveryEndAt = now + (61 * 3600 + 14 * 60) * 1000; break;
+      case "problem": s.phase = "problem"; break;
+    }
+    render();
+  });
+
+  setInterval(() => { if (s.phase === "active" || s.phase === "recovering") render(); }, 1000);
+  render();
+})();
+</script>
+</body>
+</html>

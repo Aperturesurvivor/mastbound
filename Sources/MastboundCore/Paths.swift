@@ -22,6 +22,11 @@ public struct Paths: Sendable, Equatable {
     /// Copy of the list taken at start; its hash is in the state.
     public var lockedListFile: URL { stateDirectory.appendingPathComponent("locked-list.txt") }
     public var lockFile: URL { stateDirectory.appendingPathComponent(".lock") }
+    /// Sticky folder that any user may write (mode 1777), like `/tmp`. The
+    /// only request it carries is "cancel the early end", which can only make
+    /// the block last longer, so it needs no password.
+    public var requestsDirectory: URL { stateDirectory.appendingPathComponent("requests", isDirectory: true) }
+    public var cancelRecoveryRequest: URL { requestsDirectory.appendingPathComponent("cancel-recovery") }
 
     public var installedDaemon: URL { helperDirectory.appendingPathComponent("mastboundd") }
     public var installedTool: URL { helperDirectory.appendingPathComponent("mastboundctl") }

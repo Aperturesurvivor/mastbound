@@ -12,8 +12,8 @@ usage:
   mastboundctl install
   mastboundctl start  (--minutes N | --hours N | --days N)
   mastboundctl extend (--minutes N | --hours N | --days N)
-  mastboundctl recover --confirm "\(Policy.recoveryPhrase)"
-  mastboundctl recover --cancel
+  mastboundctl recover              (long and slow on purpose)
+  mastboundctl recover --cancel     (no password needed)
   mastboundctl uninstall
 """
 
@@ -24,8 +24,14 @@ func fail(_ message: String, code: Int32 = 1) -> Never {
     exit(code)
 }
 
+/// Test builds only: `MASTBOUND_SANDBOX=<folder>` uses a test layout in that
+/// folder and skips the root check, so the quit flow can be tried safely.
+let sandbox: URL? = Policy.isTestBuild
+    ? ProcessInfo.processInfo.environment["MASTBOUND_SANDBOX"].map { URL(fileURLWithPath: $0, isDirectory: true) }
+    : nil
+
 func requireRoot() {
-    guard geteuid() == 0 else { fail("this command needs administrator rights (run with sudo).") }
+    guard geteuid() == 0 || sandbox != nil else { fail("this command needs administrator rights (run with sudo).") }
 }
 
 func durationSeconds(_ arguments: [String]) throws -> Double {
@@ -65,10 +71,12 @@ func sourceDirectory() -> URL {
 }
 
 func daemonIsLoaded() -> Bool {
-    (try? SystemCommands.run("/bin/launchctl", ["print", "system/\(Paths.launchDaemonLabel)"]).status) == 0
+    guard sandbox == nil else { return false } // a sandbox never touches launchd
+    return (try? SystemCommands.run("/bin/launchctl", ["print", "system/\(Paths.launchDaemonLabel)"]).status) == 0
 }
 
 func loadDaemon(_ paths: Paths) throws {
+    guard sandbox == nil else { return }
     if daemonIsLoaded() {
         try SystemCommands.run("/bin/launchctl", ["bootout", "system/\(Paths.launchDaemonLabel)"])
     }
@@ -99,7 +107,7 @@ func uninstall(_ engine: Engine) throws {
 }
 
 let engine = Engine(
-    paths: .system,
+    paths: sandbox.map { Paths.testing(root: $0) } ?? .system,
     bundledListSHA256: BundledList.sha256,
     clock: { try SystemClock.now() },
     afterHostsChange: { SystemCommands.flushDNSCaches() }
@@ -127,16 +135,34 @@ do {
         try engine.extend(bySeconds: try durationSeconds(Array(arguments.dropFirst())))
         try printStatus(engine)
     case "recover":
-        requireRoot()
         let rest = Array(arguments.dropFirst())
         if rest == ["--cancel"] {
-            try engine.cancelRecovery()
-        } else if rest.count == 2, rest[0] == "--confirm" {
+            // No password: cancelling only keeps the block longer.
+            if geteuid() == 0 && sandbox == nil {
+                try engine.cancelRecovery()
+            } else {
+                try CancelRequest.write(paths: engine.paths)
+                var waited = 0
+                while (try? engine.readStatus().phase) == .recovering, waited < 20 {
+                    sleep(1); waited += 1
+                }
+                if (try? engine.readStatus().phase) == .recovering {
+                    print("The cancel request is waiting for the Mastbound service.")
+                }
+            }
+            try printStatus(engine)
+        } else if rest.isEmpty {
+            requireRoot()
+            try QuitFlow.run(engine: engine)
+            try printStatus(engine)
+        } else if Policy.isTestBuild, rest.count == 2, rest[0] == "--confirm" {
+            // Test builds only, for the scripted real-system checks.
+            requireRoot()
             try engine.requestRecovery(confirmation: rest[1])
+            try printStatus(engine)
         } else {
             throw UsageError()
         }
-        try printStatus(engine)
     case "uninstall":
         requireRoot()
         try uninstall(engine)

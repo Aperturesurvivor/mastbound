@@ -137,14 +137,15 @@ struct RecoveryTests {
 
     @Test("D1: during the recovery delay the list stays blocked")
     func blockStaysDuringDelay() throws {
-        let state = try recovering().ticked(at: reading(mono: hour + day - 1, wall: hour + day - 1))
+        let state = try recovering().ticked(at: reading(mono: hour + Policy.recoveryDelaySeconds - 1, wall: hour + Policy.recoveryDelaySeconds - 1))
         #expect(state.phase == .recovering)
         #expect(try Enforcement.blockedDomains(for: state, lists: [["adult.example"]]) == ["adult.example"])
     }
 
-    @Test("D1: recovery ends the commitment after 24 hours of credited time")
+    @Test("D1: recovery ends the commitment after 72 hours of credited time")
     func recoveryEndsAfterDelay() throws {
-        let ended = try recovering().ticked(at: reading(mono: hour + day, wall: hour + day))
+        #expect(Policy.recoveryDelaySeconds == 72 * hour)
+        let ended = try recovering().ticked(at: reading(mono: hour + Policy.recoveryDelaySeconds, wall: hour + Policy.recoveryDelaySeconds))
         #expect(ended.phase == .idle)
         #expect(ended.lastEnd?.reason == .recovered)
     }
@@ -160,7 +161,7 @@ struct RecoveryTests {
         let cancelled = try recovering().cancellingRecovery(at: reading(mono: 2 * hour, wall: 2 * hour))
         #expect(cancelled.phase == .active)
         let again = try cancelled.requestingRecovery(confirmation: Policy.recoveryPhrase, at: reading(mono: 3 * hour, wall: 3 * hour))
-        #expect(again.ticked(at: reading(mono: hour + day, wall: hour + day)).phase == .recovering)
+        #expect(again.ticked(at: reading(mono: hour + Policy.recoveryDelaySeconds, wall: hour + Policy.recoveryDelaySeconds)).phase == .recovering)
     }
 
     @Test("Recovery cannot be requested twice or when idle")
@@ -255,6 +256,6 @@ struct BuildSettingTests {
     func realLimits() {
         #expect(!Policy.isTestBuild)
         #expect(Policy.minimumDurationSeconds == 3600)
-        #expect(Policy.recoveryDelaySeconds == 86_400)
+        #expect(Policy.recoveryDelaySeconds == 72 * 3_600)
     }
 }

@@ -58,7 +58,13 @@ public struct Engine: Sendable {
         let hostsSignature = try FileSignature(of: paths.hostsFile)
         let saved = try loadState(hostsText: { try readHosts().text })
         let reading = try clock()
-        let next = saved.state.ticked(at: reading)
+        var next = saved.state.ticked(at: reading)
+        // A cancel request from any user (see `Paths.requestsDirectory`).
+        // Only its name is checked; it is never opened or followed.
+        if CancelRequest.isPresent(paths: paths) {
+            if next.phase == .recovering { next = try next.cancellingRecovery(at: reading) }
+            CancelRequest.clear(paths: paths)
+        }
 
         var report = Report(phase: next.phase, hostsChanged: false, stateSaved: false, warnings: [])
         let desired = next.phase == .idle

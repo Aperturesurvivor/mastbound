@@ -11,7 +11,7 @@ public enum Policy {
     #else
     public static let isTestBuild = false
     public static let minimumDurationSeconds: Double = 60 * 60            // 1 hour
-    public static let recoveryDelaySeconds: Double = 24 * 60 * 60         // D1: 24 hours
+    public static let recoveryDelaySeconds: Double = 72 * 60 * 60         // D1: 72 hours
     #endif
     public static let maximumRemainingSeconds: Double = 365 * 24 * 60 * 60 // D4: 365 days
     public static let recoveryPhrase = "I want to end my commitment early"

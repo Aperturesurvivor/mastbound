@@ -89,18 +89,58 @@ struct EngineNormalUseTests {
         #expect(abs(credited - 4 * hour) < 61) // last save may be up to 60 s old
     }
 
-    @Test("D1: recovery keeps the block for 24 hours, then removes it")
+    @Test("D1: recovery keeps the block for 72 hours, then removes it")
     func recovery() throws {
         let f = try Fixture()
         try f.engine().start(durationSeconds: 30 * day)
         try f.engine().requestRecovery(confirmation: Policy.recoveryPhrase)
-        f.clock.advance(day - 1)
+        f.clock.advance(Policy.recoveryDelaySeconds - 1)
         #expect(try f.engine().reconcile().phase == .recovering)
         #expect(try f.blocked() == f.list)
         f.clock.advance(1)
         #expect(try f.engine().reconcile().phase == .idle)
         #expect(try f.hosts() == originalHosts)
         #expect(try f.engine().readStatus().lastEnd?.reason == .recovered)
+    }
+
+    @Test("A cancel request from any user ends the early end and is removed")
+    func cancelRequest() throws {
+        let f = try Fixture()
+        try FileManager.default.createDirectory(at: f.paths.requestsDirectory, withIntermediateDirectories: false)
+        try f.engine().start(durationSeconds: 30 * day)
+        try f.engine().requestRecovery(confirmation: Policy.recoveryPhrase)
+        try CancelRequest.write(paths: f.paths)
+        #expect(try f.engine().reconcile().phase == .active)
+        #expect(!f.exists(f.paths.cancelRecoveryRequest))
+        f.clock.advance(Policy.recoveryDelaySeconds + hour)
+        #expect(try f.engine().reconcile().phase == .active)
+        #expect(try f.blocked() == f.list)
+    }
+
+    @Test("A cancel request while active changes nothing and is removed")
+    func cancelRequestWhileActive() throws {
+        let f = try Fixture()
+        try FileManager.default.createDirectory(at: f.paths.requestsDirectory, withIntermediateDirectories: false)
+        try f.engine().start(durationSeconds: 30 * day)
+        let before = try #require(try f.state().commitment)
+        try CancelRequest.write(paths: f.paths)
+        #expect(try f.engine().reconcile().phase == .active)
+        #expect(!f.exists(f.paths.cancelRecoveryRequest))
+        #expect(try f.state().commitment?.durationSeconds == before.durationSeconds)
+    }
+
+    @Test("A symbolic link as the cancel request is removed, not followed")
+    func cancelRequestLink() throws {
+        let f = try Fixture()
+        try FileManager.default.createDirectory(at: f.paths.requestsDirectory, withIntermediateDirectories: false)
+        let victim = f.root.appendingPathComponent("victim")
+        try Data("keep".utf8).write(to: victim)
+        try f.engine().start(durationSeconds: 30 * day)
+        try f.engine().requestRecovery(confirmation: Policy.recoveryPhrase)
+        try FileManager.default.createSymbolicLink(at: f.paths.cancelRecoveryRequest, withDestinationURL: victim)
+        #expect(try f.engine().reconcile().phase == .active)
+        #expect(try String(contentsOf: victim, encoding: .utf8) == "keep")
+        #expect((try? FileManager.default.destinationOfSymbolicLink(atPath: f.paths.cancelRecoveryRequest.path)) == nil)
     }
 
     @Test("Refused commands change nothing")
@@ -390,6 +430,9 @@ struct EngineInstallTests {
         let f = try Fixture()
         let build = try f.makeBuild(list: f.list)
         try Installer.installFiles(from: build.directory, paths: f.paths, bundledListSHA256: build.sha)
+        #expect(try f.mode(f.paths.requestsDirectory) == 0o1777)
+        // Files other users left in the sticky requests folder do not block removal.
+        try Data("junk".utf8).write(to: f.paths.requestsDirectory.appendingPathComponent("junk"))
         try f.engine().start(durationSeconds: hour)
         f.clock.advance(hour)
         #expect(try f.engine().canUninstall())

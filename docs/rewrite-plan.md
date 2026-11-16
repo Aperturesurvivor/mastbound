@@ -27,7 +27,7 @@ The plan uses the recommended answers below. Change any of them before P1.
 
 | ID | Assumption |
 | --- | --- |
-| D1 | Early exit only through `mastboundctl recover`: admin password, typed phrase, then a 24-hour wait. It can be cancelled during the wait. Not in the app UI. |
+| D1 | Early exit only through `mastboundctl recover` in Terminal: admin password, a long interactive flow (12 statements, a 2-minute wait, days left, phrase, `END`), then a 72-hour wait. Cancelling is one click in the app, with no password. Changed from 24 h on 2026-11-16 at Josiah's request. |
 | D2 | Credit time with the monotonic clock while running (§4.3). |
 | D3 | At expiry the daemon removes its block and goes idle. |
 | D4 | Duration from 1 hour to 365 days. Remaining time can never pass 365 days. |
@@ -119,8 +119,8 @@ only for display.
 | `install` | yes | any | Install or upgrade files and the daemon; keeps the state |
 | `start --hours N` / `--days N` | yes | idle | Install, then start a commitment |
 | `extend --hours N` / `--days N` | yes | active, recovering | Add time; never subtracts |
-| `recover --confirm "<phrase>"` | yes | active | Move to recovering; clears 24 h later |
-| `recover --cancel` | yes | recovering | Back to active |
+| `recover` | yes | active | Interactive flow; then recovering, clears 72 h later |
+| `recover --cancel` | no | recovering | Back to active (non-root: request file, daemon acts within 5 s) |
 | `uninstall` | yes | idle | Remove daemon and files |
 
 The UI will call these commands with one admin prompt. This table is the

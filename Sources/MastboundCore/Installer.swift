@@ -32,6 +32,7 @@ public enum Installer {
 
         try makeDirectory(paths.helperDirectory, paths: paths)
         try makeDirectory(paths.stateDirectory, paths: paths)
+        try makeRequestsDirectory(paths: paths)
         for executable in executables {
             try FileStore.writeAtomically(
                 executable.data, to: paths.helperDirectory.appendingPathComponent(executable.name),
@@ -53,7 +54,14 @@ public enum Installer {
         for file in files where unlink(file.path) != 0 && errno != ENOENT {
             throw MastboundError.posix(file, "remove")
         }
-        for directory in [paths.helperDirectory, paths.stateDirectory] where rmdir(directory.path) != 0 && errno != ENOENT {
+        // Other users may have left files in the sticky requests folder.
+        // Remove each entry by name; `removeItem` does not follow links.
+        if let entries = try? FileManager.default.contentsOfDirectory(atPath: paths.requestsDirectory.path) {
+            for entry in entries {
+                try? FileManager.default.removeItem(at: paths.requestsDirectory.appendingPathComponent(entry))
+            }
+        }
+        for directory in [paths.requestsDirectory, paths.helperDirectory, paths.stateDirectory] where rmdir(directory.path) != 0 && errno != ENOENT {
             throw MastboundError.unsafeFile("Could not remove \(directory.path); it is not empty.")
         }
     }
@@ -94,6 +102,20 @@ public enum Installer {
             }
         }
         guard chmod(url.path, 0o755) == 0 else { throw MastboundError.posix(url, "set the mode of") }
+    }
+
+    /// The sticky, world-writable requests folder (mode 1777, owner root).
+    private static func makeRequestsDirectory(paths: Paths) throws {
+        let url = paths.requestsDirectory
+        if mkdir(url.path, 0o755) != 0 && errno != EEXIST { throw MastboundError.posix(url, "create") }
+        var fileStat = stat()
+        guard lstat(url.path, &fileStat) == 0, (fileStat.st_mode & S_IFMT) == S_IFDIR else {
+            throw MastboundError.unsafeFile("\(url.path) is not a folder.")
+        }
+        if fileStat.st_uid != paths.owner || fileStat.st_gid != paths.group {
+            guard chown(url.path, paths.owner, paths.group) == 0 else { throw MastboundError.posix(url, "set the owner of") }
+        }
+        guard chmod(url.path, 0o1777) == 0 else { throw MastboundError.posix(url, "set the mode of") }
     }
 
     /// Root copies `mastboundd` from the source folder and later runs it. If

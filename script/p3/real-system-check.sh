@@ -207,6 +207,9 @@ check S9c "daemon running again" wait_until 20 daemon_running
 # --- Recovery --------------------------------------------------------------
 check S10 "recovery request with the exact phrase" sudo "$ICTL" recover --confirm "$PHRASE"
 check S10a "phase is recovering, block in place" recovering_and_blocked
+check S10c1 "cancel without a password returns to active" bash -c "\"$ICTL\" recover --cancel >/dev/null && \"$ICTL\" status | grep -q 'phase: active'"
+check S10c2 "block still in place after the cancel" has_section
+check S10c3 "request again for the expiry check" sudo "$ICTL" recover --confirm "$PHRASE"
 check S10b "recovery clears the block after the test delay (120 s)" wait_until 160 no_section
 check S10c "phase idle, last end recovered" last_end_is recovered
 record S10d "hosts file exactly as before" "$([[ "$(hosts_sha)" == "$ORIGINAL_HOSTS_SHA" ]] && echo PASS || echo FAIL)" "sha ${ORIGINAL_HOSTS_SHA:0:12} -> $(hosts_sha | cut -c1-12)"

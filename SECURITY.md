@@ -23,7 +23,11 @@ repository-wide security rules:
 9. The install source folder, every folder above it, and its files must be
    owned by root and not writable by other users, because root copies and
    runs `mastboundd` from it (`Installer.requireTrustedSource`).
-10. Public release is blocked until the open checks in
+10. `/Library/Application Support/Mastbound/requests/` is root-owned, mode
+    `1777`. Any user may create `cancel-recovery` there. The daemon only
+    checks that the name exists and `unlink`s it; it never opens or follows
+    it. The request can only cancel an early end, which keeps the block on.
+11. Public release is blocked until the open checks in
     `docs/verification.md` pass.
 
 Report suspected vulnerabilities privately through a

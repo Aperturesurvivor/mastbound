@@ -51,12 +51,12 @@ mastboundctl version
 mastboundctl install
 mastboundctl start  (--minutes N | --hours N | --days N)
 mastboundctl extend (--minutes N | --hours N | --days N)
-mastboundctl recover --confirm "I want to end my commitment early"
-mastboundctl recover --cancel
+mastboundctl recover              (long and slow on purpose)
+mastboundctl recover --cancel     (no password needed)
 mastboundctl uninstall
 ```
 
-All commands except `status` and `version` need `sudo`.
+All commands except `status`, `version` and `recover --cancel` need `sudo`.
 
 - `start` installs the service if needed and starts a commitment. The
   minimum is 1 hour. The maximum is 365 days.
@@ -67,15 +67,26 @@ All commands except `status` and `version` need `sudo`.
 ### Early exit (recovery)
 
 For real problems, such as a wrong site in the list or a Mac you must sell,
-there is one slow way out:
+there is one slow way out. It is long and unpleasant on purpose, and it is
+not in the app.
 
-1. Run `sudo mastboundctl recover --confirm "I want to end my commitment early"`.
-2. Wait 24 hours. The block stays on during the wait.
-3. After 24 hours the block ends.
+1. Run `sudo mastboundctl recover` in a Terminal window. It refuses to run
+   from a script or a pipe.
+2. Agree to 12 statements, in a random order, such as "I'm quitting because I
+   care more about my carnal desires than human connection." Every third one
+   must be typed out in full.
+3. Wait 2 minutes with nothing to do.
+4. Type the number of full days left, then the phrase
+   `I want to end my commitment early`, then `END`.
+5. The block stays on for 72 more hours, then ends.
 
-You can cancel the wait with `sudo mastboundctl recover --cancel`. The 24
-hours are counted the same way as the commitment, so a clock change does not
-skip them. This command will not be in the app.
+Any wrong answer stops the flow and changes nothing; it starts over from
+step 1 the next time.
+
+**Cancelling is one click:** "Keep my commitment" in the app, or
+`mastboundctl recover --cancel`. Neither needs a password, because cancelling
+only keeps the block longer. The 72 hours are counted the same way as the
+commitment, so a clock change does not skip them.
 
 ## What Mastbound cannot do
 
