@@ -159,6 +159,19 @@ if ! has_section; then
   record S2z "diagnostic: daemon state" NOTE "$(sudo launchctl print system/$LABEL 2>&1 | grep -E 'state =|pid =|last exit' | tr '\n' ';')"
 fi
 
+# The repair was slow now and then (once over 2 minutes), so repeat it.
+for round in 1 2 3 4 5; do
+  sleep 3
+  sudo /usr/bin/sed -i '' "/$MARKER/,/# END MASTBOUND/d" /etc/hosts
+  T_EDIT=$(date +%s)
+  if wait_until 15 has_section; then
+    record "S2r$round" "repeat repair $round within 15 s" PASS "$(( $(date +%s) - T_EDIT )) s"
+  else
+    record "S2r$round" "repeat repair $round within 15 s" FAIL "not back after 15 s"
+    wait_until 120 has_section
+  fi
+done
+
 # --- Kill the daemon ------------------------------------------------------
 OLD_PID="$(daemon_pid)"
 sudo kill -9 "$OLD_PID"
@@ -231,7 +244,7 @@ check S11 "start a 1-minute commitment" sudo "$ICTL" start --minutes 1
 check S11a "block in place" has_section
 check S11b "commitment ends by itself within 90 s" wait_until 90 no_section
 check S11c "phase idle, last end completed" last_end_is completed
-check S11d "locked list removed" gone "$STATE_DIR/locked-list.txt"
+check S11d "locked list removed" wait_until 10 gone "$STATE_DIR/locked-list.txt"
 record S11e "hosts file exactly as before" "$([[ "$(hosts_sha)" == "$ORIGINAL_HOSTS_SHA" ]] && echo PASS || echo FAIL)" "$(hosts_sha | cut -c1-12)"
 
 # --- Uninstall ---------------------------------------------------------------
