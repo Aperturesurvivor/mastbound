@@ -55,8 +55,6 @@ These need a local macOS VM (GitHub runners cannot reboot), or a person.
 
 | Item | Why not yet | How |
 | --- | --- | --- |
-| Reboot keeps the block; time off is counted | Runner cannot reboot | VM: start, `sudo shutdown -r now`, check status and credit |
-| Hard power-off mid-write | Needs a VM to cut power | VM: stop the VM process during a tick, boot, check state is valid |
 | Sleep and wake | Not supported in CI | VM or real Mac |
 | "Allow in the Background" switch in Login Items stops the daemon; admin password needed?; block stays in `/etc/hosts`? | Needs a GUI | Manual in a VM |
 | Browsers: Safari, Chrome, Firefox (DNS-over-HTTPS), iCloud Private Relay, VPN | Needs a GUI and accounts | Manual in a VM |
@@ -94,8 +92,23 @@ trigger in run 7, so the cause is not confirmed. The repeated repair check
 
 ## Local VM — 2026-11-16
 
-`script/p3/vm-check.sh` could not start: the `macos-tahoe-vanilla` image
-has no Tart guest agent, so `tart exec` never connects (checked for 400 s
-on a fresh clone). Reboot, power-cut and sleep checks are still open.
-Options: log in once to install an SSH key, or use an image with the agent.
+`script/p3/vm-check.sh` on this Mac, Tart VM (macOS 26.6.2, arm64), cloned
+from `mastbound-base` (the Cirrus `macos-tahoe-vanilla` image with a test
+SSH key added by Josiah once; the image has no Tart guest agent). Test build.
 
+| # | Check | Result |
+| --- | --- | --- |
+| R1–R4 | Restart during a commitment: new boot session, daemon back (RunAtLoad), block in place, phase active | PASS |
+| R5 | Time across the restart is credited | PASS: +85 s over 92 s wall (the rest is the gap since the last save, by design) |
+| P0.2, P0.5, P1, P2 | Hard power-off (VM process killed) 0.2–2 s after a hand edit of the block | PASS: state valid, block complete each time |
+| S1, S2 | Sleep | Not testable: the VM cannot sleep (`0xe00002e2`). Commitment stays active. |
+| V1 | Full checklist inside the VM | Not run: its first check needs a list domain that resolves to IPv4, and the VM's DNS returned only IPv6. The same checklist passes on the CI runner. |
+
+**Found:** the first check after a cold start reads both lists and took up
+to 19 s in the VM (1.4 s on this Mac when warm). The block written before
+the restart stays in `/etc/hosts` during that time; only a block that was
+damaged right before the power cut waits that long for repair. The first
+run of this script also failed for test reasons only: it looked after 8 s,
+and `plutil -lint` does not read JSON. Both fixed.
+
+Still open: real sleep and wake (needs a real Mac), browsers.
