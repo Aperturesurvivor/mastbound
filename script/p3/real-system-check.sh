@@ -144,8 +144,15 @@ stop_if_failed S1
 # --- Repair ----------------------------------------------------------------
 sudo /usr/bin/sed -i '' "/$MARKER/,/# END MASTBOUND/d" /etc/hosts
 record S2 "hand edit removed the section" NOTE "$(section_lines) lines left"
+T_EDIT=$(date +%s)
 check S2a "daemon restores the section within 15 s" wait_until 15 has_section
 check S2b "restored section is complete" section_complete
+if ! has_section; then
+  wait_until 120 has_section
+  record S2x "diagnostic: seconds until the section came back" NOTE "$(( $(date +%s) - T_EDIT )) s; $(has_section && echo restored || echo 'not restored')"
+  record S2y "diagnostic: daemon log" NOTE "$(log show --last 3m --predicate 'subsystem == "com.josiahwilson.mastbound"' --style compact 2>/dev/null | tail -8 | cut -c1-160 | tr '\n' ';')"
+  record S2z "diagnostic: daemon state" NOTE "$(sudo launchctl print system/$LABEL 2>&1 | grep -E 'state =|pid =|last exit' | tr '\n' ';')"
+fi
 
 # --- Kill the daemon ------------------------------------------------------
 OLD_PID="$(daemon_pid)"
