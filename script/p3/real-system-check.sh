@@ -151,6 +151,11 @@ if ! has_section; then
   wait_until 120 has_section
   record S2x "diagnostic: seconds until the section came back" NOTE "$(( $(date +%s) - T_EDIT )) s; $(has_section && echo restored || echo 'not restored')"
   record S2y "diagnostic: daemon log" NOTE "$(log show --last 3m --predicate 'subsystem == "com.josiahwilson.mastbound"' --style compact 2>/dev/null | tail -8 | cut -c1-160 | tr '\n' ';')"
+  PID_NOW="$(daemon_pid)"
+  sudo /usr/bin/sample "$PID_NOW" 2 -file /tmp/mastboundd-sample.txt >/dev/null 2>&1
+  record S2w "diagnostic: daemon stack" NOTE "$(grep -E '^ +[+!:| ]*[0-9]+ ' /tmp/mastboundd-sample.txt 2>/dev/null | grep -oE '(MastboundCore|mastboundd|Foundation|libsystem_kernel)[^ ]* +[^ ]+ +\(?[A-Za-z_$][^ ]{0,80}' | head -25 | tr '\n' ';')"
+  echo "----- full daemon log -----"; log show --last 5m --predicate 'subsystem == "com.josiahwilson.mastbound"' --style compact 2>/dev/null | tail -40
+  echo "----- sample -----"; sed -n 1,120p /tmp/mastboundd-sample.txt 2>/dev/null
   record S2z "diagnostic: daemon state" NOTE "$(sudo launchctl print system/$LABEL 2>&1 | grep -E 'state =|pid =|last exit' | tr '\n' ';')"
 fi
 
