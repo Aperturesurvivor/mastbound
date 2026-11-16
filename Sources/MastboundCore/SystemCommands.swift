@@ -39,8 +39,10 @@ public enum SystemCommands {
             kill(process.processIdentifier, SIGKILL)
             _ = finished.wait(timeout: .now() + 2)
         }
-        // A killed program's children may keep the pipe open; do not wait long.
-        _ = reader.wait(timeout: .now() + 1)
+        // After a normal exit the pipe closes, so the reader ends soon; allow
+        // a busy machine time. A killed program's children may keep the pipe
+        // open, so then wait only briefly.
+        _ = reader.wait(timeout: .now() + (timedOut ? 1 : 10))
         return Result(
             status: timedOut ? -1 : process.terminationStatus,
             output: String(decoding: output.get(), as: UTF8.self),
