@@ -17,7 +17,9 @@ MastboundApp.main()
 
 struct MastboundApp: App {
     @State private var model: AppModel = {
+        // The demo bundle sets MastboundDemo in its Info.plist.
         let demo = CommandLine.arguments.contains("--demo")
+            || (Bundle.main.object(forInfoDictionaryKey: "MastboundDemo") as? Bool) == true
         if !demo, let runner = AdminRunner.fromBundle() {
             return AppModel(runner: runner, isDemo: false)
         }

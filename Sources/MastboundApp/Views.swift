@@ -80,14 +80,32 @@ struct DurationOption: Hashable, Identifiable {
         default: "\(days) days"
         }
     }
-    static let presets = [1, 7, 30, 90, 365].map(DurationOption.init)
+    /// Big number and unit: weeks and months read better than "90 days".
+    /// Months are 30-day steps; the end date shows the exact day.
+    var parts: (number: String, unit: String) {
+        switch days {
+        case 365: ("1", "year")
+        case 30: ("1", "month")
+        case 7: ("1", "week")
+        case let d where d >= 60 && d % 30 == 0: ("\(d / 30)", "months")
+        case let d where d >= 14 && d % 7 == 0: ("\(d / 7)", "weeks")
+        case let d: ("\(d)", d == 1 ? "day" : "days")
+        }
+    }
+    var longTitle: String { "\(parts.number) \(parts.unit)" }
+
+    /// Slider stops: fine at the short end, wider at the long end.
+    static let stops = [1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 30, 45, 60, 90, 120, 150, 180, 240, 300, 365]
+    static let ticks: [(days: Int, label: String)] = [(1, "1d"), (7, "1w"), (30, "1m"), (90, "3m"), (180, "6m"), (365, "1y")]
 }
 
 struct StartView: View {
     let model: AppModel
     let lastEnd: EndRecord?
-    @State private var days = 30
+    @State private var index = DurationOption.stops.firstIndex(of: 30)!
     @State private var confirming = false
+
+    private var days: Int { DurationOption.stops[index] }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -106,22 +124,35 @@ struct StartView: View {
             Spacer(minLength: 24)
 
             SectionLabel(text: "Duration")
-            PresetGrid(days: $days).padding(.top, 10)
-            DayStepper(days: $days).padding(.top, Theme.spacing)
+            let parts = DurationOption(days: days).parts
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(parts.number)
+                    .font(.system(size: 56, weight: .thin))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                Text(parts.unit)
+                    .font(.system(size: 17))
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .padding(.top, 8)
+            .animation(.snappy(duration: 0.18), value: days)
+
+            StopSlider(index: $index, count: DurationOption.stops.count)
+                .padding(.top, 14)
+            TickRow(index: $index).padding(.top, 4)
 
             Spacer(minLength: 24)
 
             HStack {
-                Text("Ends")
-                    .foregroundStyle(Theme.textSecondary)
+                Text("Ends").foregroundStyle(Theme.textSecondary)
                 Spacer()
-                Text(endDate.formatted(date: .abbreviated, time: .shortened))
+                Text(endDate.formatted(.dateTime.month(.abbreviated).day().year().hour().minute()))
                     .monospacedDigit()
             }
             .font(.system(size: 13))
             .padding(.bottom, 14)
 
-            Button(confirming ? "Confirm — start \(DurationOption(days: days).title)" : "Start") {
+            Button(confirming ? "Confirm — start \(DurationOption(days: days).longTitle)" : "Start") {
                 if confirming {
                     confirming = false
                     Task { await model.start(seconds: Double(days) * 86_400) }
@@ -139,74 +170,87 @@ struct StartView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, 10)
         }
-        .onChange(of: days) { confirming = false }
+        .onChange(of: index) { confirming = false }
     }
 
     private var endDate: Date { Date().addingTimeInterval(Double(days) * 86_400) }
 }
 
-private struct PresetGrid: View {
-    @Binding var days: Int
+/// A slider that snaps to `count` stops. Drag or click anywhere on it;
+/// arrow keys move one stop.
+private struct StopSlider: View {
+    @Binding var index: Int
+    let count: Int
+    static let thumb: CGFloat = 26
+    @GestureState private var dragging = false
+
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(DurationOption.presets) { option in
-                let selected = option.days == days
-                Button { days = option.days } label: {
-                    Text(option.title)
-                        .font(.system(size: 12, weight: selected ? .semibold : .regular))
-                        .foregroundStyle(selected ? Theme.background : Theme.textPrimary)
-                        .frame(maxWidth: .infinity, minHeight: 34)
-                        .background(
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(selected ? Theme.textPrimary : Theme.surface)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .strokeBorder(selected ? .clear : Theme.stroke)
-                        )
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+        GeometryReader { geometry in
+            let travel = geometry.size.width - Self.thumb
+            let x = Self.thumb / 2 + travel * CGFloat(index) / CGFloat(count - 1)
+            ZStack(alignment: .leading) {
+                Capsule().fill(Theme.surfaceRaised)
+                    .frame(height: 6)
+                    .padding(.horizontal, Self.thumb / 2)
+                Capsule().fill(Theme.textPrimary)
+                    .frame(width: max(0, x - Self.thumb / 2), height: 6)
+                    .offset(x: Self.thumb / 2)
+                Circle().fill(Theme.textPrimary)
+                    .frame(width: Self.thumb, height: Self.thumb)
+                    .background(Circle().fill(Theme.textPrimary.opacity(dragging ? 0.12 : 0.08)).frame(width: Self.thumb + (dragging ? 20 : 12), height: Self.thumb + (dragging ? 20 : 12)))
+                    .shadow(color: .black.opacity(0.5), radius: 4, y: 2)
+                    .offset(x: x - Self.thumb / 2)
+                    .animation(.snappy(duration: 0.12), value: index)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .updating($dragging) { _, state, _ in state = true }
+                    .onChanged { value in
+                        let fraction = (value.location.x - Self.thumb / 2) / max(1, travel)
+                        let new = Int((fraction * CGFloat(count - 1)).rounded())
+                        index = min(count - 1, max(0, new))
+                    }
+            )
+        }
+        .frame(height: 36)
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(.leftArrow) { index = max(0, index - 1); return .handled }
+        .onKeyPress(.rightArrow) { index = min(count - 1, index + 1); return .handled }
+        .accessibilityElement()
+        .accessibilityLabel("Duration")
+        .accessibilityValue(DurationOption(days: DurationOption.stops[index]).longTitle)
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: index = min(count - 1, index + 1)
+            case .decrement: index = max(0, index - 1)
+            @unknown default: break
             }
         }
     }
 }
 
-private struct DayStepper: View {
-    @Binding var days: Int
-    var range: ClosedRange<Int> = 1...365
+/// 1d … 1y under the slider, each one a shortcut to that stop.
+private struct TickRow: View {
+    @Binding var index: Int
 
     var body: some View {
-        HStack {
-            Text("Custom")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.textSecondary)
-            Spacer()
-            stepButton("minus") { days = max(range.lowerBound, days - 1) }
-                .disabled(days <= range.lowerBound)
-            Text("\(days) \(days == 1 ? "day" : "days")")
-                .font(.system(size: 13, weight: .medium))
-                .monospacedDigit()
-                .frame(minWidth: 72)
-            stepButton("plus") { days = min(range.upperBound, days + 1) }
-                .disabled(days >= range.upperBound)
+        GeometryReader { geometry in
+            let travel = geometry.size.width - StopSlider.thumb
+            let last = CGFloat(DurationOption.stops.count - 1)
+            ForEach(DurationOption.ticks, id: \.days) { tick in
+                let stop = DurationOption.stops.firstIndex(of: tick.days)!
+                Button(tick.label) { index = stop }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11))
+                    .foregroundStyle(stop <= index ? Theme.textSecondary : Theme.textTertiary)
+                    .fixedSize()
+                    .position(x: StopSlider.thumb / 2 + travel * CGFloat(stop) / last, y: 10)
+            }
         }
-        .padding(.leading, 14).padding(.trailing, 6)
-        .frame(height: 44)
-        .background(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.stroke))
-    }
-
-    private func stepButton(_ symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 11, weight: .semibold))
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(Theme.surfaceRaised))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .buttonRepeatBehavior(.enabled)
+        .frame(height: 20)
     }
 }
 
