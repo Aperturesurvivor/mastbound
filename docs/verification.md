@@ -96,6 +96,10 @@ trigger in run 7, so the cause is not confirmed. The repeated repair check
 from `mastbound-base` (the Cirrus `macos-tahoe-vanilla` image with a test
 SSH key added by Josiah once; the image has no Tart guest agent). Test build.
 
+`mastbound-base` was deleted on 2026-11-16 to free 24 GB. To make it again:
+`tart clone ghcr.io/cirruslabs/macos-tahoe-vanilla:latest mastbound-base`,
+start it once, and run `ssh-copy-id -i ~/.ssh/mastbound_vm admin@$(tart ip mastbound-base)`.
+
 | # | Check | Result |
 | --- | --- | --- |
 | R1–R4 | Restart during a commitment: new boot session, daemon back (RunAtLoad), block in place, phase active | PASS |
