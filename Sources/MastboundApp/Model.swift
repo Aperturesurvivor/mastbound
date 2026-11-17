@@ -106,11 +106,18 @@ final class AppModel {
     var quitFlowOpen = false
     var timing: QuitTiming { runner.timing }
 
-    /// Shows the flow. The password and the daemon clock come at step 1.
-    func openQuitFlow() { quitFlowOpen = true }
+    /// A short line on the countdown after the flow closed on its own.
+    var notice: String?
 
-    /// Leaves the flow before step 1 has asked for the password.
-    func closeQuitFlow() { quitFlowOpen = false }
+    /// Shows the flow. The password and the daemon clock come at step 1.
+    func openQuitFlow() { notice = nil; quitFlowOpen = true }
+
+    /// Leaves the flow: before step 1 has asked for the password, or after
+    /// the daemon closed it (then `notice` says why).
+    func closeQuitFlow(notice: String? = nil) {
+        self.notice = notice
+        quitFlowOpen = false
+    }
 
     /// Returns true if the daemon clock started.
     func beginQuit() async -> Bool {
@@ -127,6 +134,7 @@ final class AppModel {
     }
 
     private func run(_ kind: BusyAction, _ action: @escaping () async throws -> Void) async {
+        notice = nil
         busy = kind
         defer { busy = nil }
         do {

@@ -55,8 +55,12 @@ enum Snapshots {
             all.append(("6-quit-\(step.rawValue + 1)-\(step)", open, step, false))
         }
         all.append(("6-quit-slow-down", open, .codes, true))
+        all.append(("2b-active-timed-out", shots[1].1, nil, false))
+        let timedOut = AppModel(runner: DemoRunner(timing: .real), isDemo: false)
+        timedOut.notice = "The early end timed out. The block stays on."
         for (name, screen, step, slowDown) in all {
-            let renderer = ImageRenderer(content: RootView(model: model, fixedScreen: screen, fixedQuitStep: step, fixedSlowDown: slowDown))
+            let shown = name == "2b-active-timed-out" ? timedOut : model
+            let renderer = ImageRenderer(content: RootView(model: shown, fixedScreen: screen, fixedQuitStep: step, fixedSlowDown: slowDown))
             renderer.scale = 2
             guard let image = renderer.nsImage,
                   let tiff = image.tiffRepresentation,

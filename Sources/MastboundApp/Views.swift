@@ -292,8 +292,8 @@ struct ActiveView: View {
             }
             if recoveryRemaining != nil {
                 RecoveryNote(commitmentRemaining: remaining).padding(.top, 28)
-            } else if quitElapsed != nil {
-                Text("An early end was started and not finished. It lapses on its own.")
+            } else if let text = quitElapsed != nil ? "An early end was started and not finished. It lapses on its own." : model.notice {
+                Text(text)
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)

@@ -85,9 +85,13 @@ struct QuitFlowView: View {
             .disabled(model.isBusy)
             .padding(.top, 12)
         }
-        .onChange(of: quitElapsed == nil) { _, isNil in
+        .onChange(of: quitElapsed) { old, new in
             // The open flow lapsed or was stopped from somewhere else.
-            if began && isNil { model.closeQuitFlow() }
+            guard began, new == nil else { return }
+            let lapsed = (old ?? 0) >= Policy.quitFlowWindowSeconds - 30
+            model.closeQuitFlow(notice: lapsed
+                ? "The early end timed out. The block stays on."
+                : "The early end was stopped. The block stays on.")
         }
     }
 
