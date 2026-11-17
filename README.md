@@ -5,8 +5,8 @@
 Mastbound is a free, open-source commitment blocker for the Mac. It ships
 with a list of adult websites. You choose how long the block lasts, from one
 hour to one year. The block then stays on until that time is over, even if
-you quit or delete the app or restart the Mac. There is no button to end it
-early.
+you quit or delete the app or restart the Mac. Ending early takes more than
+an hour of deliberate friction, and then the block stays on for 72 more hours.
 
 Mastbound makes the block hard to undo on impulse. **It cannot make the block
 impossible to undo.** An administrator of a Mac can always remove it. Read
@@ -53,6 +53,8 @@ mastboundctl start  (--minutes N | --hours N | --days N)
 mastboundctl extend (--minutes N | --hours N | --days N)
 mastboundctl recover              (long and slow on purpose)
 mastboundctl recover --cancel     (no password needed)
+mastboundctl recover --begin      (used by the app's early-end flow)
+mastboundctl recover --finish PHRASE  (only 1 hour or more after --begin)
 mastboundctl uninstall
 ```
 
@@ -67,8 +69,30 @@ All commands except `status`, `version` and `recover --cancel` need `sudo`.
 ### Early exit (recovery)
 
 For real problems, such as a wrong site in the list or a Mac you must sell,
-there is one slow way out. It is long and unpleasant on purpose, and it is
-not in the app.
+there are two slow ways out. Both are long and unpleasant on purpose, and
+both end in the same 72-hour wait.
+
+**In the app** ("End early" under the countdown), 10 steps:
+
+1. Read what will happen, then enter the admin password. This starts a
+   clock in the Mastbound service. Nothing is unblocked.
+2. Agree to the same 12 statements, one at a time, each after a few seconds.
+   Every third one must be typed out in full.
+3. Type 5 distorted codes.
+4. Work out 5 sums such as `47 × 38 − 512` without a calculator.
+5. Find every square with a given digit in 3 grids.
+6. Write 3 answers of at least 150 characters each, at least 1 minute each.
+7. Wait 15 minutes with nothing to do.
+8. Hold a button down for 90 seconds; letting go starts it again.
+9. Type the number of full days left and `I want to end my commitment early`.
+10. Tick a box, type `END`, and enter the admin password again.
+
+A wrong answer locks that step for 20 seconds (60 seconds in step 9) and
+gives a new puzzle. Closing the app drops all progress. The service itself
+refuses step 10 until step 1 was at least 1 hour ago, so skipping the app's
+steps does not make it faster. An unfinished flow lapses after 4 hours.
+
+**In Terminal:**
 
 1. Run `sudo mastboundctl recover` in a Terminal window. It refuses to run
    from a script or a pipe.
@@ -80,10 +104,11 @@ not in the app.
    `I want to end my commitment early`, then `END`.
 5. The block stays on for 72 more hours, then ends.
 
-Any wrong answer stops the flow and changes nothing; it starts over from
-step 1 the next time.
+Any wrong answer stops the Terminal flow and changes nothing; it starts over
+from step 1 the next time.
 
-**Cancelling is one click:** "Keep my commitment" in the app, or
+**Cancelling is one click:** "Keep my commitment" in the app (it is the big
+button on every step of the app's flow, and during the 72 hours), or
 `mastboundctl recover --cancel`. Neither needs a password, because cancelling
 only keeps the block longer. The 72 hours are counted the same way as the
 commitment, so a clock change does not skip them.

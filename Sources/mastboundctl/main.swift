@@ -14,6 +14,8 @@ usage:
   mastboundctl extend (--minutes N | --hours N | --days N)
   mastboundctl recover              (long and slow on purpose)
   mastboundctl recover --cancel     (no password needed)
+  mastboundctl recover --begin      (used by the app's early-end flow)
+  mastboundctl recover --finish PHRASE  (only 1 hour or more after --begin)
   mastboundctl uninstall
 """
 
@@ -60,6 +62,7 @@ func printStatus(_ engine: Engine) throws {
     print("phase: \(status.phase.rawValue)")
     if let remaining = status.remainingSeconds { print("time left: \(format(remaining))") }
     if let recovery = status.recoveryRemainingSeconds { print("recovery clears in: \(format(recovery))") }
+    if let quit = status.quitElapsedSeconds { print("early-end flow open for: \(format(quit))") }
     if let end = status.estimatedEnd { print("estimated end: \(end.formatted(date: .abbreviated, time: .shortened))") }
     if let last = status.lastEnd { print("last commitment: \(last.reason.rawValue) at \(last.endedAt.formatted())") }
 }
@@ -139,21 +142,31 @@ do {
         if rest == ["--cancel"] {
             // No password: cancelling only keeps the block longer.
             if geteuid() == 0 && sandbox == nil {
-                try engine.cancelRecovery()
+                try engine.stopEarlyEnd()
             } else {
                 try CancelRequest.write(paths: engine.paths)
+                func pending() -> Bool {
+                    guard let status = try? engine.readStatus() else { return false }
+                    return status.phase == .recovering || status.quitElapsedSeconds != nil
+                }
                 var waited = 0
-                while (try? engine.readStatus().phase) == .recovering, waited < 20 {
-                    sleep(1); waited += 1
-                }
-                if (try? engine.readStatus().phase) == .recovering {
-                    print("The cancel request is waiting for the Mastbound service.")
-                }
+                while pending(), waited < 20 { sleep(1); waited += 1 }
+                if pending() { print("The cancel request is waiting for the Mastbound service.") }
             }
             try printStatus(engine)
         } else if rest.isEmpty {
             requireRoot()
             try QuitFlow.run(engine: engine)
+            try printStatus(engine)
+        } else if rest == ["--begin"] {
+            // The app's flow. Starts a clock only; the block stays fully on.
+            requireRoot()
+            try engine.beginQuit()
+            try printStatus(engine)
+        } else if rest.count == 2, rest[0] == "--finish" {
+            // Refused until the flow has been open for the minimum time.
+            requireRoot()
+            try engine.finishQuit(confirmation: rest[1])
             try printStatus(engine)
         } else if Policy.isTestBuild, rest.count == 2, rest[0] == "--confirm" {
             // Test builds only, for the scripted real-system checks.

@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 import MastboundCore
 
-/// The only way to end a commitment early. It is slow on purpose: a person
+/// The Terminal way to end a commitment early (the app has a longer one). It is slow on purpose: a person
 /// who has a real reason (a wrong site in the list, a Mac that must be sold)
 /// can get through it, and a person acting on an urge has time to change
 /// their mind. After it, the block still stays for `Policy.recoveryDelaySeconds`
@@ -13,20 +13,6 @@ import MastboundCore
 enum QuitFlow {
     struct Stopped: Error {}
 
-    static let statements = [
-        "I'm quitting because I care more about my carnal desires than human connection.",
-        "I am choosing a screen over the people who love me.",
-        "I made this commitment with a clear head, and I am breaking it with a cloudy one.",
-        "I know this urge will pass whether or not I give in to it.",
-        "I am trading {days} of progress for a few minutes.",
-        "I would not want the people I respect to watch me do this.",
-        "Nobody is making me do this. This is my choice, and mine alone.",
-        "I am not quitting because the block is broken. I am quitting because I am weak right now.",
-        "I accept that tomorrow I will have to explain this to myself.",
-        "A person who keeps promises to themselves would close this window now.",
-        "I know the block stays for {delay} more anyway, and I am starting the wait regardless.",
-        "I am ignoring the person who set this up: me.",
-    ]
 
     static func run(engine: Engine) throws {
         guard isatty(STDIN_FILENO) == 1, isatty(STDOUT_FILENO) == 1 else {
@@ -39,10 +25,8 @@ enum QuitFlow {
                 : "No commitment is running.")
         }
         let days = Int(remaining / 86_400)
-        let daysText = days == 1 ? "1 day" : "\(days) days"
-        let delay = Policy.recoveryDelaySeconds >= 3_600
-            ? "\(Int(Policy.recoveryDelaySeconds / 3_600)) hours"
-            : "\(Int(Policy.recoveryDelaySeconds / 60)) minutes"
+        let daysText = QuitTerms.daysText(remainingSeconds: remaining)
+        let delay = QuitTerms.delayText
 
         do {
             say("""
@@ -64,7 +48,7 @@ enum QuitFlow {
             try expect("Type 'continue' to read the terms: ", "continue")
 
             // Step 1: the terms, in a new order each time.
-            let terms = statements.map { $0.replacingOccurrences(of: "{days}", with: daysText).replacingOccurrences(of: "{delay}", with: delay) }.shuffled()
+            let terms = QuitTerms.filled(remainingSeconds: remaining).shuffled()
             say("\nSTEP 1 OF 5: TERMS (\(terms.count) items)\n")
             for (index, term) in terms.enumerated() {
                 say("\n  [ ] \(index + 1). \(term)")

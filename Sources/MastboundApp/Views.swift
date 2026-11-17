@@ -5,6 +5,8 @@ struct RootView: View {
     @Bindable var model: AppModel
     /// Screenshots pass a fixed screen and skip the timers.
     var fixedScreen: Screen?
+    /// Screenshots of the early-end flow.
+    var fixedQuitStep: QuitStep?
 
     var body: some View {
         let screen = fixedScreen ?? model.screen
@@ -16,10 +18,16 @@ struct RootView: View {
                     ProgressView().controlSize(.small).frame(maxHeight: .infinity)
                 case .idle(let lastEnd):
                     StartView(model: model, lastEnd: lastEnd)
-                case .active(let remaining, let end):
-                    ActiveView(model: model, remaining: remaining, end: end, recoveryRemaining: nil)
+                case .active(let remaining, let end, let quitElapsed):
+                    if let step = fixedQuitStep {
+                        QuitFlowView(model: model, remaining: remaining, quitElapsed: quitElapsed, initialStep: step, forSnapshot: true)
+                    } else if model.quitFlowOpen {
+                        QuitFlowView(model: model, remaining: remaining, quitElapsed: quitElapsed)
+                    } else {
+                        ActiveView(model: model, remaining: remaining, end: end, recoveryRemaining: nil, quitElapsed: quitElapsed)
+                    }
                 case .recovering(let remaining, let recovery, let end):
-                    ActiveView(model: model, remaining: remaining, end: end, recoveryRemaining: recovery)
+                    ActiveView(model: model, remaining: remaining, end: end, recoveryRemaining: recovery, quitElapsed: nil)
                 case .problem(let message):
                     ProblemView(message: message)
                 }
@@ -164,7 +172,7 @@ struct StartView: View {
             .disabled(model.isBusy)
             .keyboardShortcut(.defaultAction)
 
-            Text(confirming ? "There is no way to end it early from the app." : "You will be asked for your Mac password.")
+            Text(confirming ? "Ending early takes over an hour, then \(QuitTerms.delayText) more." : "You will be asked for your Mac password.")
                 .font(.system(size: 11))
                 .foregroundStyle(confirming ? Theme.warning : Theme.textTertiary)
                 .frame(maxWidth: .infinity)
@@ -261,6 +269,8 @@ struct ActiveView: View {
     let remaining: Double
     let end: Date?
     let recoveryRemaining: Double?
+    /// Set when an early-end flow is open but its screens are closed.
+    let quitElapsed: Double?
     @State private var addingTime = false
 
     var body: some View {
@@ -279,14 +289,20 @@ struct ActiveView: View {
                     .monospacedDigit()
                     .padding(.top, 10)
             }
-            if let recoveryRemaining {
+            if recoveryRemaining != nil {
                 RecoveryNote(commitmentRemaining: remaining).padding(.top, 28)
+            } else if quitElapsed != nil {
+                Text("An early end was started and not finished. It lapses on its own.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.warning)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 28)
             }
             Spacer(minLength: 24)
 
-            if recoveryRemaining != nil {
+            if recoveryRemaining != nil || quitElapsed != nil {
                 Button(model.isBusy ? "Keeping it…" : "Keep my commitment") {
-                    Task { await model.cancelRecovery() }
+                    Task { await model.stopEarlyEnd() }
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(model.isBusy)
@@ -300,10 +316,18 @@ struct ActiveView: View {
                     .buttonStyle(SecondaryButtonStyle())
                     .disabled(model.isBusy)
             }
-            Text("Blocking adult sites on this Mac.")
-                .font(.system(size: 11))
-                .foregroundStyle(Theme.textTertiary)
-                .padding(.top, 12)
+            HStack(spacing: 6) {
+                Text("Blocking adult sites on this Mac.")
+                if recoveryRemaining == nil {
+                    Text("·")
+                    Button(quitElapsed == nil ? "End early" : "Start over") { model.openQuitFlow() }
+                        .buttonStyle(.plain)
+                        .disabled(model.isBusy)
+                }
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(Theme.textTertiary)
+            .padding(.top, 12)
         }
     }
 }

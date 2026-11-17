@@ -6,6 +6,8 @@ public struct StatusReport: Codable, Equatable, Sendable {
     public var phase: Phase
     public var remainingSeconds: Double?
     public var recoveryRemainingSeconds: Double?
+    /// Credited time since the in-app early-end flow began, if it is open.
+    public var quitElapsedSeconds: Double?
     public var estimatedEnd: Date?
     public var lastEnd: EndRecord?
     public var updatedAt: Date
@@ -14,6 +16,7 @@ public struct StatusReport: Codable, Equatable, Sendable {
         phase = state.phase
         remainingSeconds = state.commitment?.remainingSeconds
         recoveryRemainingSeconds = state.commitment?.recoveryRemainingSeconds
+        quitElapsedSeconds = state.commitment?.quitElapsedSeconds
         estimatedEnd = state.estimatedEnd(from: reading)
         lastEnd = state.lastEnd
         updatedAt = reading.wall

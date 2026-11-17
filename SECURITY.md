@@ -26,8 +26,12 @@ repository-wide security rules:
 10. `/Library/Application Support/Mastbound/requests/` is root-owned, mode
     `1777`. Any user may create `cancel-recovery` there. The daemon only
     checks that the name exists and `unlink`s it; it never opens or follows
-    it. The request can only cancel an early end, which keeps the block on.
-11. Public release is blocked until the open checks in
+    it. The request can only cancel an early end (an open app flow or the
+    72-hour wait), which keeps the block on.
+11. The 1-hour minimum of the app's early-end flow is checked by the root
+    daemon from credited time (`EngineState.finishingQuit`), never by the
+    app. The app's puzzles are friction only.
+12. Public release is blocked until the open checks in
     `docs/verification.md` pass.
 
 Report suspected vulnerabilities privately through a

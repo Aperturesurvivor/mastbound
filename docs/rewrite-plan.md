@@ -27,7 +27,7 @@ The plan uses the recommended answers below. Change any of them before P1.
 
 | ID | Assumption |
 | --- | --- |
-| D1 | Early exit only through `mastboundctl recover` in Terminal: admin password, a long interactive flow (12 statements, a 2-minute wait, days left, phrase, `END`), then a 72-hour wait. Cancelling is one click in the app, with no password. Changed from 24 h on 2026-11-16 at Josiah's request. |
+| D1 | Early exit through `mastboundctl recover` in Terminal (admin password, a long interactive flow: 12 statements, a 2-minute wait, days left, phrase, `END`) or through the app's 10-step flow (terms, distorted codes, sums, digit grids, written answers, a 15-minute wait, a 90-second hold, facts, `END`; the daemon refuses to finish it until 1 hour after it began). Both then wait 72 hours. Cancelling is one click in the app, with no password. 72 h from 24 h and the app flow added on 2026-11-16 at Josiah's request. |
 | D2 | Credit time with the monotonic clock while running (§4.3). |
 | D3 | At expiry the daemon removes its block and goes idle. |
 | D4 | Duration from 1 hour to 365 days. Remaining time can never pass 365 days. |
@@ -120,7 +120,9 @@ only for display.
 | `start --hours N` / `--days N` | yes | idle | Install, then start a commitment |
 | `extend --hours N` / `--days N` | yes | active, recovering | Add time; never subtracts |
 | `recover` | yes | active | Interactive flow; then recovering, clears 72 h later |
-| `recover --cancel` | no | recovering | Back to active (non-root: request file, daemon acts within 5 s) |
+| `recover --cancel` | no | recovering, or active with an open app flow | Back to active, flow closed (non-root: request file, daemon acts within 5 s) |
+| `recover --begin` | yes | active | Opens the app flow: records the credited time; nothing unblocks |
+| `recover --finish PHRASE` | yes | active with an open app flow | Refused before 1 hour of credited time since `--begin`; then recovering |
 | `uninstall` | yes | idle | Remove daemon and files |
 
 The UI will call these commands with one admin prompt. This table is the

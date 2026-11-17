@@ -259,3 +259,83 @@ struct BuildSettingTests {
         #expect(Policy.recoveryDelaySeconds == 72 * 3_600)
     }
 }
+
+@Suite("In-app early-end flow")
+struct QuitFlowGateTests {
+    private func open() throws -> EngineState {
+        try started(duration: 30 * day).beginningQuit(at: reading(mono: hour, wall: hour))
+    }
+
+    @Test("Opening the flow keeps the block fully on")
+    func openKeepsBlock() throws {
+        let state = try open()
+        #expect(state.phase == .active)
+        #expect(state.commitment?.quitElapsedSeconds == 0)
+        #expect(try Enforcement.blockedDomains(for: state, lists: [["adult.example"]]) == ["adult.example"])
+    }
+
+    @Test("Finish is refused before the minimum time, even with a clock jump")
+    func finishTooSoon() throws {
+        #expect(Policy.quitFlowMinimumSeconds == hour)
+        let early = reading(mono: hour + Policy.quitFlowMinimumSeconds - 1, wall: 50 * day)
+        #expect(throws: MastboundError.self) {
+            try open().finishingQuit(confirmation: Policy.recoveryPhrase, at: early)
+        }
+    }
+
+    @Test("Finish after the minimum time starts the 72-hour delay")
+    func finishStartsDelay() throws {
+        let at = reading(mono: hour + Policy.quitFlowMinimumSeconds, wall: hour + Policy.quitFlowMinimumSeconds)
+        let state = try open().finishingQuit(confirmation: Policy.recoveryPhrase, at: at)
+        #expect(state.phase == .recovering)
+        #expect(state.commitment?.quitStartedAtCredit == nil)
+        #expect(state.commitment?.recoveryRemainingSeconds == Policy.recoveryDelaySeconds)
+    }
+
+    @Test("Finish needs the phrase and an open flow")
+    func finishRefusals() throws {
+        let at = reading(mono: 3 * hour, wall: 3 * hour)
+        #expect(throws: MastboundError.self) { try open().finishingQuit(confirmation: "yes", at: at) }
+        #expect(throws: MastboundError.self) {
+            try started(duration: 30 * day).finishingQuit(confirmation: Policy.recoveryPhrase, at: at)
+        }
+        #expect(throws: MastboundError.self) { try EngineState.idle.beginningQuit(at: at) }
+    }
+
+    @Test("An unfinished flow lapses after the window")
+    func flowLapses() throws {
+        let late = hour + Policy.quitFlowWindowSeconds + 1
+        let state = try open().ticked(at: reading(mono: late, wall: late))
+        #expect(state.commitment?.quitStartedAtCredit == nil)
+        #expect(throws: MastboundError.self) {
+            try state.finishingQuit(confirmation: Policy.recoveryPhrase, at: reading(mono: late, wall: late))
+        }
+    }
+
+    @Test("Opening again starts the clock again")
+    func reopenRestartsClock() throws {
+        let again = try open().beginningQuit(at: reading(mono: 1.5 * hour, wall: 1.5 * hour))
+        #expect(throws: MastboundError.self) {
+            try again.finishingQuit(confirmation: Policy.recoveryPhrase, at: reading(mono: 2.2 * hour, wall: 2.2 * hour))
+        }
+    }
+
+    @Test("Stop closes an open flow or a delay, and nothing else")
+    func stop() throws {
+        let at = reading(mono: 2 * hour, wall: 2 * hour)
+        #expect(try open().stoppingEarlyEnd(at: at).commitment?.quitStartedAtCredit == nil)
+        let recovering = try started(duration: 30 * day).requestingRecovery(confirmation: Policy.recoveryPhrase, at: at)
+        #expect(try recovering.stoppingEarlyEnd(at: at).phase == .active)
+        #expect(throws: MastboundError.self) { try started(duration: 30 * day).stoppingEarlyEnd(at: at) }
+    }
+
+    @Test("A saved open flow survives encoding; a damaged one is refused")
+    func encoding() throws {
+        let state = try open()
+        #expect(try EngineState.decode(state.encoded()) == state)
+        var bad = state
+        let credited = bad.commitment?.creditedSeconds ?? 0
+        bad.commitment?.quitStartedAtCredit = credited + 10
+        #expect(throws: MastboundError.self) { try bad.validated() }
+    }
+}

@@ -117,6 +117,26 @@ struct EngineNormalUseTests {
         #expect(try f.blocked() == f.list)
     }
 
+    @Test("App flow: begin, finish too soon refused, finish later, cancel request closes an open flow")
+    func appFlow() throws {
+        let f = try Fixture()
+        try FileManager.default.createDirectory(at: f.paths.requestsDirectory, withIntermediateDirectories: false)
+        try f.engine().start(durationSeconds: 30 * day)
+        try f.engine().beginQuit()
+        #expect(try f.engine().readStatus().quitElapsedSeconds == 0)
+        try CancelRequest.write(paths: f.paths)
+        #expect(try f.engine().reconcile().phase == .active)
+        #expect(try f.engine().readStatus().quitElapsedSeconds == nil)
+
+        try f.engine().beginQuit()
+        f.clock.advance(Policy.quitFlowMinimumSeconds - 60)
+        #expect(throws: MastboundError.self) { try f.engine().finishQuit(confirmation: Policy.recoveryPhrase) }
+        f.clock.advance(60)
+        try f.engine().finishQuit(confirmation: Policy.recoveryPhrase)
+        #expect(try f.engine().readStatus().phase == .recovering)
+        #expect(try f.blocked() == f.list)
+    }
+
     @Test("A cancel request while active changes nothing and is removed")
     func cancelRequestWhileActive() throws {
         let f = try Fixture()

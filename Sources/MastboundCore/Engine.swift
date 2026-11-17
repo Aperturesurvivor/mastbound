@@ -62,7 +62,7 @@ public struct Engine: Sendable {
         // A cancel request from any user (see `Paths.requestsDirectory`).
         // Only its name is checked; it is never opened or followed.
         if CancelRequest.isPresent(paths: paths) {
-            if next.phase == .recovering { next = try next.cancellingRecovery(at: reading) }
+            if let stopped = try? next.stoppingEarlyEnd(at: reading) { next = stopped }
             CancelRequest.clear(paths: paths)
         }
 
@@ -150,7 +150,8 @@ public struct Engine: Sendable {
         guard let oldCommitment = old.commitment, let newCommitment = new.commitment else {
             return old != new
         }
-        if old.phase != new.phase || oldCommitment.startedAt != newCommitment.startedAt { return true }
+        if old.phase != new.phase || oldCommitment.startedAt != newCommitment.startedAt
+            || oldCommitment.quitStartedAtCredit != newCommitment.quitStartedAtCredit { return true }
         let last = oldCommitment.lastReading
         if last.bootSessionID != reading.bootSessionID { return true }
         let elapsed = Double(reading.monotonicNanoseconds &- last.monotonicNanoseconds) / 1_000_000_000
@@ -194,6 +195,21 @@ public struct Engine: Sendable {
     @discardableResult
     public func cancelRecovery() throws -> EngineState {
         try change { try $0.cancellingRecovery(at: $1) }
+    }
+
+    @discardableResult
+    public func beginQuit() throws -> EngineState {
+        try change { try $0.beginningQuit(at: $1) }
+    }
+
+    @discardableResult
+    public func finishQuit(confirmation: String) throws -> EngineState {
+        try change { try $0.finishingQuit(confirmation: confirmation, at: $1) }
+    }
+
+    @discardableResult
+    public func stopEarlyEnd() throws -> EngineState {
+        try change { try $0.stoppingEarlyEnd(at: $1) }
     }
 
     /// I3: true only when no commitment is running. Changes nothing.

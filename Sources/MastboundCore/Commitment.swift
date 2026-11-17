@@ -8,10 +8,17 @@ public enum Policy {
     public static let isTestBuild = true
     public static let minimumDurationSeconds: Double = 60                 // 1 minute
     public static let recoveryDelaySeconds: Double = 120                  // 2 minutes
+    public static let quitFlowMinimumSeconds: Double = 60                 // 1 minute
+    public static let quitFlowWindowSeconds: Double = 10 * 60             // 10 minutes
     #else
     public static let isTestBuild = false
     public static let minimumDurationSeconds: Double = 60 * 60            // 1 hour
     public static let recoveryDelaySeconds: Double = 72 * 60 * 60         // D1: 72 hours
+    /// The in-app early-end flow must be open at least this long (credited
+    /// time) before it can finish. The daemon enforces it, not the app.
+    public static let quitFlowMinimumSeconds: Double = 60 * 60            // 1 hour
+    /// An unfinished in-app flow lapses after this, and must start again.
+    public static let quitFlowWindowSeconds: Double = 4 * 60 * 60         // 4 hours
     #endif
     public static let maximumRemainingSeconds: Double = 365 * 24 * 60 * 60 // D4: 365 days
     public static let recoveryPhrase = "I want to end my commitment early"
@@ -39,6 +46,14 @@ public struct Commitment: Codable, Equatable, Sendable {
     public var listSHA256: String
     /// `creditedSeconds` at the moment recovery was requested, if it was.
     public var recoveryRequestedAtCredit: Double?
+    /// `creditedSeconds` when the in-app early-end flow began, if it is open.
+    /// The block is fully on while it is open.
+    public var quitStartedAtCredit: Double? = nil
+
+    /// Credited time since the in-app early-end flow began.
+    public var quitElapsedSeconds: Double? {
+        quitStartedAtCredit.map { max(0, creditedSeconds - $0) }
+    }
 
     public var remainingSeconds: Double { max(0, durationSeconds - creditedSeconds) }
 
@@ -109,6 +124,9 @@ public struct EngineState: Codable, Equatable, Sendable {
            commitment.creditedSeconds - requested >= Policy.recoveryDelaySeconds {
             return EngineState(lastEnd: EndRecord(reason: .recovered, endedAt: reading.wall))
         }
+        if let elapsed = commitment.quitElapsedSeconds, elapsed > Policy.quitFlowWindowSeconds {
+            commitment.quitStartedAtCredit = nil // the open flow lapsed
+        }
         var next = self
         next.commitment = commitment
         return next
@@ -167,6 +185,48 @@ public struct EngineState: Codable, Equatable, Sendable {
             throw MastboundError.notAllowed("The confirmation phrase does not match.")
         }
         commitment.recoveryRequestedAtCredit = commitment.creditedSeconds
+        commitment.quitStartedAtCredit = nil
+        next.commitment = commitment
+        return next
+    }
+
+    /// Opens the in-app early-end flow. Nothing is unblocked; this only
+    /// starts the clock that `finishingQuit` checks. Opening it again starts
+    /// the clock again.
+    public func beginningQuit(at reading: ClockReading) throws -> EngineState {
+        var next = ticked(at: reading)
+        guard next.phase == .active, var commitment = next.commitment else {
+            throw MastboundError.notAllowed("An early end can be started only during an active commitment.")
+        }
+        commitment.quitStartedAtCredit = commitment.creditedSeconds
+        next.commitment = commitment
+        return next
+    }
+
+    /// Ends the in-app flow and starts the recovery delay, but only after the
+    /// flow has been open for `Policy.quitFlowMinimumSeconds`.
+    public func finishingQuit(confirmation: String, at reading: ClockReading) throws -> EngineState {
+        let current = ticked(at: reading)
+        guard current.phase == .active, let elapsed = current.commitment?.quitElapsedSeconds else {
+            throw MastboundError.notAllowed("No early end is in progress. Start again from the app.")
+        }
+        guard elapsed >= Policy.quitFlowMinimumSeconds else {
+            let minutes = Int(((Policy.quitFlowMinimumSeconds - elapsed) / 60).rounded(.up))
+            throw MastboundError.notAllowed("It is too soon. Try again in \(minutes) min.")
+        }
+        return try current.requestingRecovery(confirmation: confirmation, at: reading)
+    }
+
+    /// The one-click "keep my commitment": closes an open in-app flow, or
+    /// cancels a recovery delay. Both only keep the block on.
+    public func stoppingEarlyEnd(at reading: ClockReading) throws -> EngineState {
+        var next = ticked(at: reading)
+        guard var commitment = next.commitment,
+              commitment.recoveryRequestedAtCredit != nil || commitment.quitStartedAtCredit != nil else {
+            throw MastboundError.notAllowed("No early end is in progress.")
+        }
+        commitment.recoveryRequestedAtCredit = nil
+        commitment.quitStartedAtCredit = nil
         next.commitment = commitment
         return next
     }
@@ -198,6 +258,12 @@ public struct EngineState: Codable, Equatable, Sendable {
             if let requested = commitment.recoveryRequestedAtCredit {
                 guard requested.isFinite, requested >= 0, requested <= commitment.creditedSeconds else {
                     throw MastboundError.invalidState("The saved recovery request is invalid.")
+                }
+            }
+            if let started = commitment.quitStartedAtCredit {
+                guard started.isFinite, started >= 0, started <= commitment.creditedSeconds,
+                      commitment.recoveryRequestedAtCredit == nil else {
+                    throw MastboundError.invalidState("The saved early-end flow is invalid.")
                 }
             }
         }

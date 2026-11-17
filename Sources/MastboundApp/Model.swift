@@ -6,7 +6,8 @@ import Observation
 enum Screen: Equatable {
     case loading
     case idle(lastEnd: EndRecord?)
-    case active(remaining: Double, end: Date?)
+    /// `quitElapsed` is set while an in-app early-end flow is open.
+    case active(remaining: Double, end: Date?, quitElapsed: Double?)
     case recovering(remaining: Double, recoveryRemaining: Double, end: Date?)
     case problem(String)
 }
@@ -16,8 +17,16 @@ enum Screen: Equatable {
 protocol CommandRunner: Sendable {
     func start(seconds: Double) async throws
     func extend(seconds: Double) async throws
-    /// No password: cancelling an early end only keeps the block longer.
-    func cancelRecovery() async throws
+    /// No password: stopping an early end (an open flow or the 72-hour
+    /// wait) only keeps the block on.
+    func stopEarlyEnd() async throws
+    /// Opens the early-end flow (password). Starts the daemon's clock only.
+    func beginQuit() async throws
+    /// Finishes the flow (password). The daemon refuses it until the flow
+    /// has been open for the minimum time.
+    func finishQuit() async throws
+    /// Waits used by the flow. The demo uses short ones.
+    var timing: QuitTiming { get }
     func readStatus() throws -> StatusReport?
 }
 
@@ -60,7 +69,11 @@ final class AppModel {
         case .idle:
             screen = .idle(lastEnd: report.lastEnd)
         case .active:
-            screen = .active(remaining: max(0, (report.remainingSeconds ?? 0) - age), end: report.estimatedEnd)
+            screen = .active(
+                remaining: max(0, (report.remainingSeconds ?? 0) - age),
+                end: report.estimatedEnd,
+                quitElapsed: report.quitElapsedSeconds.map { $0 + age }
+            )
         case .recovering:
             screen = .recovering(
                 remaining: max(0, (report.remainingSeconds ?? 0) - age),
@@ -72,7 +85,37 @@ final class AppModel {
 
     func start(seconds: Double) async { await run { try await self.runner.start(seconds: seconds) } }
     func extend(seconds: Double) async { await run { try await self.runner.extend(seconds: seconds) } }
-    func cancelRecovery() async { await run { try await self.runner.cancelRecovery() } }
+    func stopEarlyEnd() async {
+        quitFlowOpen = false
+        await run { try await self.runner.stopEarlyEnd() }
+    }
+
+    // MARK: Early-end flow
+
+    /// True while the flow's screens are shown. Kept in memory only: closing
+    /// the app drops the progress, and the open flow lapses on its own.
+    var quitFlowOpen = false
+    var timing: QuitTiming { runner.timing }
+
+    /// Shows the flow. The password and the daemon clock come at step 1.
+    func openQuitFlow() { quitFlowOpen = true }
+
+    /// Leaves the flow before step 1 has asked for the password.
+    func closeQuitFlow() { quitFlowOpen = false }
+
+    /// Returns true if the daemon clock started.
+    func beginQuit() async -> Bool {
+        var ok = false
+        await run { try await self.runner.beginQuit(); ok = true }
+        return ok
+    }
+
+    func finishQuit() async -> Bool {
+        var ok = false
+        await run { try await self.runner.finishQuit(); ok = true }
+        if ok { quitFlowOpen = false }
+        return ok
+    }
 
     private func run(_ action: @escaping () async throws -> Void) async {
         isBusy = true
@@ -86,4 +129,23 @@ final class AppModel {
             errorMessage = error.localizedDescription
         }
     }
+}
+
+/// How long each wait in the early-end flow lasts.
+struct QuitTiming: Sendable {
+    /// Seconds before each terms box can be ticked.
+    var termDelay: Double
+    /// The cooling-off wait, with nothing to do.
+    var coolOff: Double
+    /// How long the hold button must be held.
+    var hold: Double
+    /// Lock after a wrong answer.
+    var penalty: Double
+    /// Least time spent on each written answer.
+    var reasonMinimum: Double
+    /// The daemon's own minimum, shown as the last countdown.
+    var gate: Double
+
+    static let real = QuitTiming(termDelay: 6, coolOff: 15 * 60, hold: 90, penalty: 20, reasonMinimum: 60, gate: Policy.quitFlowMinimumSeconds)
+    static let demo = QuitTiming(termDelay: 1, coolOff: 15, hold: 5, penalty: 3, reasonMinimum: 3, gate: 120)
 }
