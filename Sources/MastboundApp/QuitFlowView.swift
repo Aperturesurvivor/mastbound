@@ -14,15 +14,15 @@ enum QuitStep: Int, CaseIterable {
 
     var title: String {
         switch self {
-        case .intro: "Before you start"
+        case .intro: "End early?"
         case .terms: "Terms"
-        case .codes: "Prove you are paying attention"
-        case .math: "Slow down"
-        case .grid: "Find the numbers"
-        case .reasons: "Write it down"
+        case .codes: "Codes"
+        case .math: "Sums"
+        case .grid: "Grids"
+        case .reasons: "Write"
         case .coolOff: "Wait"
         case .hold: "Hold"
-        case .facts: "Know what you are giving up"
+        case .facts: "Facts"
         case .final: "Last step"
         }
     }
@@ -82,10 +82,6 @@ struct QuitFlowView: View {
             .buttonStyle(PrimaryButtonStyle())
             .disabled(model.isBusy)
             .padding(.top, 12)
-            Text(began ? "One click stops this. Nothing is unblocked." : "Nothing has changed yet.")
-                .font(.system(size: 11))
-                .foregroundStyle(Theme.textTertiary)
-                .padding(.top, 10)
         }
         .onChange(of: quitElapsed == nil) { _, isNil in
             // The open flow lapsed or was stopped from somewhere else.
@@ -252,17 +248,8 @@ private struct IntroStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Prose("This takes more than \(Int(timing.gate / 60)) minutes on purpose. If you finish every step, the block stays on for \(QuitTerms.delayText) more, and then it ends.")
-            Prose("You have \(QuitTerms.daysText(remainingSeconds: remaining)) left. A wrong answer locks the step for a short time. Closing Mastbound drops your progress.")
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(QuitStep.allCases.dropFirst(), id: \.self) { step in
-                    Text("\(step.rawValue + 1).  \(step.title)")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.textTertiary)
-                }
-            }
-            .padding(.top, 4)
-            ForwardButton(title: model.isBusy ? "Waiting for password…" : "Begin (asks for your password)", enabled: !model.isBusy) {
+            Prose("Over \(timing.gate >= 3600 ? "an hour" : "\(Int(timing.gate / 60)) minutes") of puzzles and waiting. Then the block stays \(QuitTerms.delayText) more.")
+            ForwardButton(title: model.isBusy ? "Waiting for password…" : "Begin", enabled: !model.isBusy) {
                 Task { if await model.beginQuit() { done() } }
             }
         }
@@ -291,7 +278,7 @@ private struct TermsStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("Read each statement. Agree to all \(terms.count) to go on.")
+            Prose("Agree to all \(terms.count).")
             Text("TERM \(index + 1) OF \(terms.count)")
                 .font(.system(size: 11, weight: .semibold)).tracking(0.8)
                 .foregroundStyle(Theme.textTertiary)
@@ -310,7 +297,7 @@ private struct TermsStep: View {
                 let locked = penalty.secondsLeft(at: now) > 0
                 VStack(alignment: .leading, spacing: 0) {
                     if mustType {
-                        Prose("Type the statement exactly to agree.").padding(.top, 14).padding(.bottom, 8)
+                        Prose("Type it to agree.").padding(.top, 14).padding(.bottom, 8)
                         Field(placeholder: "Type the statement", text: $typed, onSubmit: checkTyped)
                         ForwardButton(title: "Agree", enabled: !locked && !typed.isEmpty, action: checkTyped)
                     } else {
@@ -425,7 +412,7 @@ private struct CodesStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("Type the letters and numbers you see. Code \(round + 1) of \(Self.rounds).")
+            Prose("Type the code. \(round + 1) of \(Self.rounds).")
             CaptchaImage(code: code).padding(.top, 14)
             HStack {
                 Spacer()
@@ -474,7 +461,7 @@ private struct MathStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("Work it out without a calculator. Problem \(round + 1) of \(Self.rounds).")
+            Prose("No calculator. \(round + 1) of \(Self.rounds).")
             Text("\(problem.a) × \(problem.b) − \(problem.c) = ?")
                 .font(.system(size: 30, weight: .light))
                 .monospacedDigit()
@@ -535,7 +522,7 @@ private struct GridStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("Select every square with a \(grid.target). Some are turned. Grid \(round + 1) of \(Self.rounds).")
+            Prose("Select every \(grid.target). \(round + 1) of \(Self.rounds).")
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                 ForEach(grid.cells.indices, id: \.self) { index in
                     let cell = grid.cells[index]
@@ -595,7 +582,7 @@ private struct ReasonsStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("Answer in your own words. Question \(index + 1) of \(Self.prompts.count).")
+            Prose("\(index + 1) of \(Self.prompts.count).")
             Text(Self.prompts[index])
                 .font(.system(size: 15))
                 .fixedSize(horizontal: false, vertical: true)
@@ -641,13 +628,12 @@ private struct CoolOffStep: View {
         Ticking { now in
             let left = max(0, timing.coolOff - now.timeIntervalSince(startedAt))
             VStack(alignment: .leading, spacing: 0) {
-                Prose("Nothing to do. Stand up. Drink some water. The urge is at its strongest now, and it gets weaker from here.")
+                Prose("The urge gets weaker from here.")
                 Text(clock(left))
                     .font(.system(size: 56, weight: .thin))
                     .monospacedDigit()
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
-                Prose("If you close Mastbound now, nothing is unblocked and your commitment continues.")
                 ForwardButton(title: "Continue", enabled: left == 0, action: done)
             }
         }
@@ -664,7 +650,7 @@ private struct HoldStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("Press and hold the circle for \(Int(timing.hold)) seconds without letting go. If you let go, it starts again.")
+            Prose("Hold for \(Int(timing.hold)) seconds. Letting go starts over.")
             ZStack {
                 Circle().stroke(Theme.surfaceRaised, lineWidth: 6)
                 Circle().trim(from: 0, to: progress)
@@ -708,9 +694,9 @@ private struct FactsStep: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("How many full days are left in your commitment? It is on the main screen; close this flow to look.")
+            Prose("Full days left?")
             Field(placeholder: "Days left", text: $days).padding(.top, 10)
-            Prose("Type this sentence:").padding(.top, 16)
+            Prose("Type:").padding(.top, 16)
             Text(Policy.recoveryPhrase)
                 .font(.system(size: 14, weight: .medium))
                 .padding(.vertical, 8)
@@ -747,14 +733,14 @@ private struct FinalStep: View {
         let wait = max(0, timing.gate - (quitElapsed ?? 0))
         VStack(alignment: .leading, spacing: 0) {
             if wait > 0 {
-                Prose("The last step opens \(Int(timing.gate / 60)) minutes after you began. Mastbound's service checks this, not the app.")
+                Prose("Opens in")
                 Text(clock(wait))
                     .font(.system(size: 56, weight: .thin))
                     .monospacedDigit()
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
             } else {
-                Prose("If you go on, the block stays on for \(QuitTerms.delayText) more, and then it ends. You can stop it during that time with one click.")
+                Prose("Then the block stays \(QuitTerms.delayText) more.")
             }
             Button {
                 understood.toggle()
@@ -765,7 +751,7 @@ private struct FinalStep: View {
                         .background(RoundedRectangle(cornerRadius: 4).fill(understood ? Theme.textPrimary : .clear))
                         .overlay(Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.background).opacity(understood ? 1 : 0))
                         .frame(width: 18, height: 18)
-                    Text("I understand that nobody else will see this, and I am the only one who decided it.")
+                    Text("I decided this myself.")
                         .font(.system(size: 13))
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
@@ -774,9 +760,9 @@ private struct FinalStep: View {
             }
             .buttonStyle(.plain)
             .padding(.top, 16)
-            Prose("Type END in capital letters.").padding(.top, 16).padding(.bottom, 8)
+            Prose("Type END.").padding(.top, 16).padding(.bottom, 8)
             Field(placeholder: "END", text: $typed)
-            Button(model.isBusy ? "Waiting for password…" : "End early (asks for your password)") {
+            Button(model.isBusy ? "Waiting for password…" : "End early") {
                 Task { _ = await model.finishQuit() }
             }
             .buttonStyle(SecondaryButtonStyle())
