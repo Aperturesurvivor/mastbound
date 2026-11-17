@@ -9,7 +9,7 @@ public enum Policy {
     public static let minimumDurationSeconds: Double = 60                 // 1 minute
     public static let recoveryDelaySeconds: Double = 120                  // 2 minutes
     public static let quitFlowMinimumSeconds: Double = 60                 // 1 minute
-    public static let quitFlowWindowSeconds: Double = 10 * 60             // 10 minutes
+    public static let quitFlowWindowSeconds: Double = 20 * 60             // 20 minutes
     #else
     public static let isTestBuild = false
     public static let minimumDurationSeconds: Double = 60 * 60            // 1 hour

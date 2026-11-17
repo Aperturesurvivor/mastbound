@@ -158,7 +158,7 @@ struct QuitTiming: Sendable {
     var gate: Double
 
     #if MASTBOUND_TESTING
-    // Test builds: the daemon lets an open flow lapse after 10 minutes, so
+    // Test builds: the daemon lets an open flow lapse after 20 minutes, so
     // the long waits are cut to fit. Never set for a release.
     static let real = QuitTiming(termDelay: 6, coolOff: 60, hold: 15, penalty: 20, reasonMinimum: 10, gate: Policy.quitFlowMinimumSeconds)
     #else

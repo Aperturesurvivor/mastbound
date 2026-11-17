@@ -156,7 +156,12 @@ on this Mac. Josiah typed the VM password at each macOS dialog.
 | Three quick answers show "Slow down"; the slider resists; holding it at the end for 10 s goes back to the same step | PASS (demo, twice: terms and codes) |
 | Codes, Sums, Grids, Write, Wait, Hold, Facts, Last step | PASS (demo) |
 | End early, then "Keep my commitment" during the wait goes back to the normal countdown | PASS (demo) |
-| Finish password dialog in the VM | Not yet: needs Josiah at the VM |
+| Slow down in the VM: three quick sums show the slider; holding it at the end goes back to the same step | PASS (VM, twice) |
+| Full flow in the VM: terms, codes, sums, grids, write, 1-minute wait, hold, facts, last step | PASS (VM) |
+| End early on the last step asks for the password, then the daemon is in recovery and the block stays on | PASS (VM) |
+| The app shows the recovery countdown with Keep my commitment and Add time | PASS (VM) |
+| After the 2-minute test recovery the block clears (0 lines left), phase idle, the app shows the start screen | PASS (VM) |
+| An open flow that is not finished lapses; the app goes back to the countdown | PASS (VM) |
 
 **Found and fixed:**
 
@@ -167,7 +172,13 @@ on this Mac. Josiah typed the VM password at each macOS dialog.
   `build-app.sh --testing` now builds the app with the test limits too
   (1-minute wait, 15-second hold, 10-second written answers).
 - The intro said "1 minutes" in test builds. It now says "a minute".
+- The first full VM run lapsed after 10 minutes: typing 450 characters over
+  Screen Sharing is slow. The test daemon now lets an open flow stay open
+  for 20 minutes. Release limits are not changed (1 hour minimum, 4 hours).
 
 **Note:** Screen Sharing typing sends every letter as "a" (the text is sent
 as Unicode with key code 0). Single key presses work, so text was sent one
 key at a time.
+
+**Note:** When an open flow lapses, the app goes back to the countdown with no
+message. This is safe, but a short line ("The early end timed out") may help.
