@@ -116,3 +116,29 @@ run of this script also failed for test reasons only: it looked after 8 s,
 and `plutil -lint` does not read JSON. Both fixed.
 
 Still open: real sleep and wake (needs a real Mac), browsers.
+
+## App early-end commands — 2026-11-17
+
+`script/p3/app-check.sh mastbound-base`, Tart VM `mastbound-app` (macOS
+26.6.2, arm64) cloned from `mastbound-base`. Test build (1-minute flow
+minimum, 2-minute recovery delay). These are the commands the app runs.
+0 failures.
+
+| # | Check | Result |
+| --- | --- | --- |
+| A0 | VM boots, SSH and passwordless sudo work | PASS |
+| A1, A1a | Start a 30-minute commitment; block in `/etc/hosts` | PASS |
+| A2 | `recover --finish` with no open flow | Refused: "No early end is in progress" |
+| A3 | `recover --begin` without sudo | Refused: needs administrator rights |
+| A4, A4a | `recover --begin` opens the flow; phase active; block on | PASS |
+| A5 | Finish right away | Refused: "too soon" |
+| A6 | Finish after 65 s with a wrong phrase | Refused: phrase does not match |
+| A7, A7a | Finish after the minimum | PASS: phase recovering, block still on |
+| A8, A8a | `recover --cancel` without sudo during the wait | PASS: back to active, block on |
+| A9–A9c | Begin, then cancel without sudo; finish after cancel | PASS: flow closed; finish refused |
+| A10, A10a | Full early end | PASS: block cleared about 108 s after finish |
+| A10b | Phase idle, last end "recovered" | PASS |
+| A11 | Test app copied to `/Applications` in the VM | For the GUI check by a person |
+
+Still open from this run: the app's own password dialogs and the flow UI,
+by a person in the VM window.
