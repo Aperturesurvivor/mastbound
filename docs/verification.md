@@ -182,3 +182,43 @@ key at a time.
 
 **Note:** When an open flow lapses, the app goes back to the countdown with no
 message. This is safe, but a short line ("The early end timed out") may help.
+
+### Suspend, reboot and browsers — 2026-11-17
+
+Tart VM `mastbound-app`, test build, a 30-minute commitment started with
+`mastboundctl start`.
+
+**Sleep.** The VM cannot sleep: `pmset sleepnow` does nothing, and macOS
+reports 0 sleeps since boot. Real sleep is still to be checked on a spare
+Mac (never on the main Mac). The code counts time with
+`mach_continuous_time`, which keeps counting during sleep, so sleep should
+take time off the commitment.
+
+| Check | Result |
+| --- | --- |
+| Reboot: commitment still active, block on (63,312 lines) | PASS |
+| Reboot: 75 s credited for 75 s of real time | PASS |
+| VM suspend for about 2 minutes, then resume: same boot session | PASS |
+| After the resume: still active, block on | PASS |
+| The frozen time is not credited: the end moved about 2 minutes later | PASS (safe direction) |
+
+**Browsers.** `script/p3/browser-check.sh` runs in the VM. It loads a
+blocked site headless and looks for the site's real address in the
+browser's own network log (Chrome `--log-net-log`, Firefox `MOZ_LOG`). It
+never prints the domain or a page. A control run with `example.com` found
+the real address in every case, so the check can see a bypass.
+
+| Case | Blocked site |
+| --- | --- |
+| curl (system resolver; Safari uses the same) | BLOCKED |
+| Chrome, default settings | BLOCKED |
+| Chrome, secure DNS on, Cloudflare (`secure_dns_mode` 2, 340 DoH requests) | BLOCKED |
+| Firefox, default settings | BLOCKED |
+| Firefox, DNS over HTTPS first (`network.trr.mode` 2) | BLOCKED |
+| Firefox, DNS over HTTPS only (`network.trr.mode` 3) | BLOCKED |
+
+Chrome and Firefox both read `/etc/hosts` before DNS over HTTPS, so their
+secure DNS settings do not get around the block.
+
+**Not covered:** Safari itself (no network log; it uses the system resolver,
+which returns `0.0.0.0`), a VPN, iCloud Private Relay, and other browsers.
