@@ -302,7 +302,7 @@ struct ActiveView: View {
             Spacer(minLength: 24)
 
             if recoveryRemaining != nil || quitElapsed != nil {
-                Button(model.isBusy ? "Keeping it…" : "Keep my commitment") {
+                Button(model.busy == .stop ? "Keeping it…" : "Keep my commitment") {
                     Task { await model.stopEarlyEnd() }
                 }
                 .buttonStyle(PrimaryButtonStyle())

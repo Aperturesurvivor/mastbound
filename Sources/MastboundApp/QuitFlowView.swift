@@ -76,7 +76,7 @@ struct QuitFlowView: View {
                     .id(step) // start each step at the top
             }
 
-            Button(model.isBusy ? "Keeping it…" : "Keep my commitment") {
+            Button(model.busy == .stop ? "Keeping it…" : "Keep my commitment") {
                 Task {
                     if began { await model.stopEarlyEnd() } else { model.closeQuitFlow() }
                 }
@@ -257,10 +257,16 @@ private struct IntroStep: View {
     let timing: QuitTiming
     let done: () -> Void
 
+    private var gateText: String {
+        if timing.gate >= 3_600 { return "an hour" }
+        let minutes = max(1, Int(timing.gate / 60))
+        return minutes == 1 ? "a minute" : "\(minutes) minutes"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Prose("Over \(timing.gate >= 3600 ? "an hour" : "\(Int(timing.gate / 60)) minutes") of puzzles and waiting. Then the block stays \(QuitTerms.delayText) more.")
-            ForwardButton(title: model.isBusy ? "Waiting for password…" : "Begin", enabled: !model.isBusy) {
+            Prose("Over \(gateText) of puzzles and waiting. Then the block stays \(QuitTerms.delayText) more.")
+            ForwardButton(title: model.busy == .begin ? "Waiting for password…" : "Begin", enabled: !model.isBusy) {
                 Task { if await model.beginQuit() { done() } }
             }
         }
@@ -913,7 +919,7 @@ private struct FinalStep: View {
             .padding(.top, 16)
             Prose("Type END.").padding(.top, 16).padding(.bottom, 8)
             Field(placeholder: "END", text: $typed)
-            Button(model.isBusy ? "Waiting for password…" : "End early") {
+            Button(model.busy == .finish ? "Waiting for password…" : "End early") {
                 Task { _ = await model.finishQuit() }
             }
             .buttonStyle(SecondaryButtonStyle())

@@ -34,7 +34,10 @@ protocol CommandRunner: Sendable {
 @Observable
 final class AppModel {
     private(set) var screen: Screen = .loading
-    private(set) var isBusy = false
+    /// The command that is running now, if any. Each button shows its own
+    /// busy text only for its own command.
+    private(set) var busy: BusyAction?
+    var isBusy: Bool { busy != nil }
     var errorMessage: String?
     /// Wall time of the last status read, to count down between reads.
     private var readAt = Date()
@@ -89,11 +92,11 @@ final class AppModel {
         }
     }
 
-    func start(seconds: Double) async { await run { try await self.runner.start(seconds: seconds) } }
-    func extend(seconds: Double) async { await run { try await self.runner.extend(seconds: seconds) } }
+    func start(seconds: Double) async { await run(.start) { try await self.runner.start(seconds: seconds) } }
+    func extend(seconds: Double) async { await run(.extend) { try await self.runner.extend(seconds: seconds) } }
     func stopEarlyEnd() async {
         quitFlowOpen = false
-        await run { try await self.runner.stopEarlyEnd() }
+        await run(.stop) { try await self.runner.stopEarlyEnd() }
     }
 
     // MARK: Early-end flow
@@ -112,20 +115,20 @@ final class AppModel {
     /// Returns true if the daemon clock started.
     func beginQuit() async -> Bool {
         var ok = false
-        await run { try await self.runner.beginQuit(); ok = true }
+        await run(.begin) { try await self.runner.beginQuit(); ok = true }
         return ok
     }
 
     func finishQuit() async -> Bool {
         var ok = false
-        await run { try await self.runner.finishQuit(); ok = true }
+        await run(.finish) { try await self.runner.finishQuit(); ok = true }
         if ok { quitFlowOpen = false }
         return ok
     }
 
-    private func run(_ action: @escaping () async throws -> Void) async {
-        isBusy = true
-        defer { isBusy = false }
+    private func run(_ kind: BusyAction, _ action: @escaping () async throws -> Void) async {
+        busy = kind
+        defer { busy = nil }
         do {
             try await action()
             refresh()
@@ -136,6 +139,8 @@ final class AppModel {
         }
     }
 }
+
+enum BusyAction: Sendable { case start, extend, begin, finish, stop }
 
 /// How long each wait in the early-end flow lasts.
 struct QuitTiming: Sendable {
@@ -152,6 +157,12 @@ struct QuitTiming: Sendable {
     /// The daemon's own minimum, shown as the last countdown.
     var gate: Double
 
+    #if MASTBOUND_TESTING
+    // Test builds: the daemon lets an open flow lapse after 10 minutes, so
+    // the long waits are cut to fit. Never set for a release.
+    static let real = QuitTiming(termDelay: 6, coolOff: 60, hold: 15, penalty: 20, reasonMinimum: 10, gate: Policy.quitFlowMinimumSeconds)
+    #else
     static let real = QuitTiming(termDelay: 6, coolOff: 15 * 60, hold: 90, penalty: 20, reasonMinimum: 60, gate: Policy.quitFlowMinimumSeconds)
+    #endif
     static let demo = QuitTiming(termDelay: 1, coolOff: 15, hold: 5, penalty: 3, reasonMinimum: 3, gate: 120)
 }

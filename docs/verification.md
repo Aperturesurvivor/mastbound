@@ -142,3 +142,32 @@ minimum, 2-minute recovery delay). These are the commands the app runs.
 
 Still open from this run: the app's own password dialogs and the flow UI,
 by a person in the VM window.
+
+### GUI check of the app — 2026-11-17
+
+Claude drove the test app in the VM over Screen Sharing, and the demo app
+on this Mac. Josiah typed the VM password at each macOS dialog.
+
+| Check | Result |
+| --- | --- |
+| Start (1 day) asks for the password, then the block is on (63,312 domains) | PASS (VM) |
+| End early → Begin asks for the password, then the daemon shows the open flow | PASS (VM) |
+| Terms intro fades in; 12 terms; every third must be typed exactly; a wrong one locks for 20 s | PASS (VM) |
+| Three quick answers show "Slow down"; the slider resists; holding it at the end for 10 s goes back to the same step | PASS (demo, twice: terms and codes) |
+| Codes, Sums, Grids, Write, Wait, Hold, Facts, Last step | PASS (demo) |
+| End early, then "Keep my commitment" during the wait goes back to the normal countdown | PASS (demo) |
+| Finish password dialog in the VM | Not yet: needs Josiah at the VM |
+
+**Found and fixed:**
+
+- While one command waited for the password, the other button also showed
+  "Keeping it…". Each button now shows busy text only for its own command.
+- A test build of the app used the real 15-minute wait, but the test daemon
+  lets an open flow lapse after 10 minutes, so the flow could not finish.
+  `build-app.sh --testing` now builds the app with the test limits too
+  (1-minute wait, 15-second hold, 10-second written answers).
+- The intro said "1 minutes" in test builds. It now says "a minute".
+
+**Note:** Screen Sharing typing sends every letter as "a" (the text is sent
+as Unicode with key code 0). Single key presses work, so text was sent one
+key at a time.

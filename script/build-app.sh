@@ -7,7 +7,8 @@
 #
 #   script/build-app.sh [--testing]
 #
-# --testing builds the helper tools with test limits (1 min minimum).
+# --testing builds the helper tools and the app with test limits (1 min
+# minimum, 2 min recovery, short waits in the early-end flow). Never ship.
 # Both bundles are ad-hoc signed only. Never copy the real one over the old
 # /Applications/Mastbound.app (see docs/migration.md).
 set -euo pipefail
@@ -15,16 +16,17 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 cli_flags=()
+app_flags=()
+BUILD_DIR="$ROOT_DIR/.build/app"
 for argument in "$@"; do
   case "$argument" in
-    --testing) cli_flags+=(--testing) ;;
+    --testing) cli_flags+=(--testing); app_flags+=(-Xswiftc -DMASTBOUND_TESTING); BUILD_DIR="$ROOT_DIR/.build/app-testing" ;;
     *) echo "unknown option: $argument" >&2; exit 2 ;;
   esac
 done
 
-BUILD_DIR="$ROOT_DIR/.build/app"
-swift build -c release --build-path "$BUILD_DIR" --product MastboundApp
-APP_BIN="$(swift build -c release --build-path "$BUILD_DIR" --show-bin-path)/MastboundApp"
+swift build -c release --build-path "$BUILD_DIR" ${app_flags[@]+"${app_flags[@]}"} --product MastboundApp
+APP_BIN="$(swift build -c release --build-path "$BUILD_DIR" ${app_flags[@]+"${app_flags[@]}"} --show-bin-path)/MastboundApp"
 TOOLS="$(mktemp -d)"
 trap '/bin/rm -rf "$TOOLS"' EXIT
 script/build-cli.sh ${cli_flags[@]+"${cli_flags[@]}"} "$TOOLS/tools" >/dev/null
