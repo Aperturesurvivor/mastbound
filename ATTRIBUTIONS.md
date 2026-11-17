@@ -4,14 +4,12 @@
 adult-domain sources mirrored by
 [StevenBlack/hosts](https://github.com/StevenBlack/hosts) (MIT) at revision
 `92a38fd106abe49f50ed6904ff0e867f4eb44f9f`, built by `script/make-list.sh`
-(76,744 domains, SHA-256
-`6113a8bd81f45149e586f23e5cb33b03a5a24ef9d32d196877c54dd333d2f0b3`).
+(63,312 domains, SHA-256
+`db929b125e7991f5127e278377f69bb860fa753450580d7593ae6ea58a9533bc`).
 
 | Source | Homepage | License |
 | --- | --- | --- |
 | BigDargon hostsVN adult | https://github.com/bigdargon/hostsVN | MIT |
-| brijrajparmar27 pornography | https://github.com/brijrajparmar27/host-sources | CC BY 4.0 |
-| Clefspeare13 pornhosts | https://github.com/Clefspeare13/pornhosts | MIT |
 | Sinfonietta snuff-site list | https://github.com/Sinfonietta/hostfiles | MIT |
 | Sinfonietta pornography list | https://github.com/Sinfonietta/hostfiles | MIT |
 | Tiuxo pornography list | https://github.com/tiuxo/hosts | CC BY 4.0 |
@@ -29,7 +27,6 @@ License texts are in `Resources/licenses/` and must ship with the list:
 | `Sinfonietta-hostfiles.txt` | both Sinfonietta lists (MIT) |
 | `tiuxo-hosts.txt` | Tiuxo (CC BY 4.0) |
 
-Open (decision D6 in `docs/distribution.md`): the Clefspeare13 repository is
-blocked by GitHub, so its MIT notice cannot be read, and the
-brijrajparmar27 repository has no license file. Their licenses above come
-from StevenBlack's `update.json` metadata only.
+Not used (decision D6, 2026-11-16): Clefspeare13 pornhosts (its repository is
+blocked by GitHub, so its license notice cannot be read) and brijrajparmar27
+(no license file). Every source above has a license text in this repo.

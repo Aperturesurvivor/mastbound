@@ -115,6 +115,12 @@ StevenBlack's metadata, or (b) drop both from `script/make-list.sh`, which
 removes about 13,500 domains and changes the list hash. (b) is the safe legal
 choice; ask a lawyer if the list matters more.
 
+**Decided 2026-11-16: (b).** Both sources are dropped. The list is now 63,312
+domains (SHA-256 `db929b12…`). All the large sites are still in the other
+sources. During a commitment the daemon blocks the union of the locked list
+and the installed list, so an upgrade never removes a domain from a running
+commitment.
+
 ## 6. Not done
 
 - No Developer ID account, so no signing or notarization was tried.

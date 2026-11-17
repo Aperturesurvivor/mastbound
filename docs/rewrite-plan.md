@@ -161,5 +161,6 @@ Each phase ends at a review gate.
   `Aperturesurvivor/mastbound` (old URLs redirect).
 - **Daemon registration.** Decided in P5: keep the plist written by the
   installer. `SMAppService` keeps the daemon inside the app, which breaks I8.
-- **D6, list licenses.** Keep or drop the Clefspeare13 and brijrajparmar27
+- **D6, list licenses.** Decided 2026-11-16: both dropped (list now 63,312
+  domains). Was: keep or drop the Clefspeare13 and brijrajparmar27
   sources. See `docs/distribution.md` §5.

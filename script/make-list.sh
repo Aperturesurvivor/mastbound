@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REVISION="92a38fd106abe49f50ed6904ff0e867f4eb44f9f"
-SOURCES=(bigdargon brijrajparmar27 clefspeare13 sinfonietta-snuff sinfonietta tiuxo)
+SOURCES=(bigdargon sinfonietta-snuff sinfonietta tiuxo)
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK_DIR="$(/usr/bin/mktemp -d)"

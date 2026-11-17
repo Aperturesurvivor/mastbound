@@ -2,6 +2,6 @@
 
 /// Identity of the list in `Resources/adult-domains.txt`.
 public enum BundledList {
-    public static let sha256 = "6113a8bd81f45149e586f23e5cb33b03a5a24ef9d32d196877c54dd333d2f0b3"
-    public static let domainCount = 76744
+    public static let sha256 = "db929b125e7991f5127e278377f69bb860fa753450580d7593ae6ea58a9533bc"
+    public static let domainCount = 63312
 }
