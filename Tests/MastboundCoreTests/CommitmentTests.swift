@@ -349,8 +349,10 @@ struct QuitTermsTextTests {
         #expect(QuitTerms.progressText(elapsedSeconds: 5 * 3_600 + 12 * 60) == "5 hours and 12 minutes")
         #expect(QuitTerms.progressText(elapsedSeconds: 3_600 + 60) == "1 hour and 1 minute")
         #expect(QuitTerms.progressText(elapsedSeconds: 20) == "1 minute")
-        let filled = QuitTerms.filled(elapsedSeconds: 2 * 3_600)
-        #expect(filled.contains("I am trading 2 hours of progress for a few minutes."))
+        #expect(QuitTerms.progressStatement(elapsedSeconds: 60) == "I could not even last one hour. I am giving up after 1 minute.")
+        #expect(QuitTerms.progressStatement(elapsedSeconds: 2 * 3_600) == "I could not even last one day. I am giving up after 2 hours.")
+        let filled = QuitTerms.filled(elapsedSeconds: 3 * 86_400)
+        #expect(filled.contains("I am trading 3 days of progress for a few minutes."))
         #expect(!filled.joined().contains("{"))
     }
 }

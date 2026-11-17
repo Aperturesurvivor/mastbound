@@ -1,14 +1,15 @@
 import Foundation
 
 /// The statements a person must agree to before an early end in the app.
-/// `{progress}` and `{delay}` are filled in.
+/// `{progress}` (a whole statement, from `progressStatement`) and `{delay}`
+/// are filled in.
 public enum QuitTerms {
     public static let statements = [
         "I'm quitting because I care more about my carnal desires than human connection.",
         "I am choosing a screen over the people who love me.",
         "I made this commitment with a clear head, and I am breaking it with a cloudy one.",
         "I know this urge will pass whether or not I give in to it.",
-        "I am trading {progress} for a few minutes.",
+        "{progress}",
         "I would not want the people I respect to watch me do this.",
         "Nobody is making me do this. This is my choice, and mine alone.",
         "I am not quitting because the block is broken. I am quitting because I am weak right now.",
@@ -42,9 +43,19 @@ public enum QuitTerms {
         return unit(max(1, minutes), "minute")
     }
 
+    /// About the time kept so far. Early on there is little progress to
+    /// trade, so the statement says how short the commitment lasted.
+    public static func progressStatement(elapsedSeconds: Double?) -> String {
+        guard let elapsed = elapsedSeconds else { return "I am trading my progress for a few minutes." }
+        let kept = progressText(elapsedSeconds: elapsed)
+        if elapsed < 3_600 { return "I could not even last one hour. I am giving up after \(kept)." }
+        if elapsed < 86_400 { return "I could not even last one day. I am giving up after \(kept)." }
+        return "I am trading \(kept) of progress for a few minutes."
+    }
+
     /// `elapsedSeconds` is the credited time since the commitment started.
     public static func filled(elapsedSeconds: Double?) -> [String] {
-        let progress = elapsedSeconds.map { "\(progressText(elapsedSeconds: $0)) of progress" } ?? "my progress"
+        let progress = progressStatement(elapsedSeconds: elapsedSeconds)
         return statements.map {
             $0.replacingOccurrences(of: "{progress}", with: progress).replacingOccurrences(of: "{delay}", with: delayText)
         }
