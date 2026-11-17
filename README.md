@@ -51,7 +51,6 @@ mastboundctl version
 mastboundctl install
 mastboundctl start  (--minutes N | --hours N | --days N)
 mastboundctl extend (--minutes N | --hours N | --days N)
-mastboundctl recover              (long and slow on purpose)
 mastboundctl recover --cancel     (no password needed)
 mastboundctl recover --begin      (used by the app's early-end flow)
 mastboundctl recover --finish PHRASE  (only 1 hour or more after --begin)
@@ -69,14 +68,15 @@ All commands except `status`, `version` and `recover --cancel` need `sudo`.
 ### Early exit (recovery)
 
 For real problems, such as a wrong site in the list or a Mac you must sell,
-there are two slow ways out. Both are long and unpleasant on purpose, and
-both end in the same 72-hour wait.
+there is one slow way out, in the app. It is long and unpleasant on purpose,
+and it ends in a 72-hour wait.
 
-**In the app** ("End early" under the countdown), 10 steps:
+"End early" under the countdown starts it. It has 10 steps:
 
 1. Read what will happen, then enter the admin password. This starts a
    clock in the Mastbound service. Nothing is unblocked.
-2. Agree to the same 12 statements, one at a time, each after a few seconds.
+2. Agree to 12 statements, such as "I'm quitting because I care more about
+   my carnal desires than human connection.", one at a time, each after a few seconds.
    Every third one must be typed out in full.
 3. Type 5 distorted codes.
 4. Work out 5 sums such as `47 × 38 − 512` without a calculator.
@@ -92,20 +92,8 @@ gives a new puzzle. Closing the app drops all progress. The service itself
 refuses step 10 until step 1 was at least 1 hour ago, so skipping the app's
 steps does not make it faster. An unfinished flow lapses after 4 hours.
 
-**In Terminal:**
-
-1. Run `sudo mastboundctl recover` in a Terminal window. It refuses to run
-   from a script or a pipe.
-2. Agree to 12 statements, in a random order, such as "I'm quitting because I
-   care more about my carnal desires than human connection." Every third one
-   must be typed out in full.
-3. Wait 2 minutes with nothing to do.
-4. Type the number of full days left, then the phrase
-   `I want to end my commitment early`, then `END`.
-5. The block stays on for 72 more hours, then ends.
-
-Any wrong answer stops the Terminal flow and changes nothing; it starts over
-from step 1 the next time.
+The commands `recover --begin` and `recover --finish` are the steps the app
+runs. They have the same 1-hour minimum when typed in Terminal.
 
 **Cancelling is one click:** "Keep my commitment" in the app (it is the big
 button on every step of the app's flow, and during the 72 hours), or

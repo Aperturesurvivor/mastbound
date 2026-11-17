@@ -1,7 +1,6 @@
 import Foundation
 
-/// The statements a person must agree to before an early end, in Terminal
-/// (`mastboundctl recover`) and in the app. `{days}` and `{delay}` are filled in.
+/// The statements a person must agree to before an early end in the app. `{days}` and `{delay}` are filled in.
 public enum QuitTerms {
     public static let statements = [
         "I'm quitting because I care more about my carnal desires than human connection.",

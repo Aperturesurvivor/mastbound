@@ -12,7 +12,6 @@ usage:
   mastboundctl install
   mastboundctl start  (--minutes N | --hours N | --days N)
   mastboundctl extend (--minutes N | --hours N | --days N)
-  mastboundctl recover              (long and slow on purpose)
   mastboundctl recover --cancel     (no password needed)
   mastboundctl recover --begin      (used by the app's early-end flow)
   mastboundctl recover --finish PHRASE  (only 1 hour or more after --begin)
@@ -153,10 +152,6 @@ do {
                 while pending(), waited < 20 { sleep(1); waited += 1 }
                 if pending() { print("The cancel request is waiting for the Mastbound service.") }
             }
-            try printStatus(engine)
-        } else if rest.isEmpty {
-            requireRoot()
-            try QuitFlow.run(engine: engine)
             try printStatus(engine)
         } else if rest == ["--begin"] {
             // The app's flow. Starts a clock only; the block stays fully on.
