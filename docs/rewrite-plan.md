@@ -157,8 +157,8 @@ Each phase ends at a review gate.
 
 - **D5, this Mac.** Decided in P4: start the new commitment first, then
   uninstall the old build. No conversion code. See `docs/migration.md`.
-- **Repo name.** The repo is still `Screen-Time-Roaster`. Rename to
-  `mastbound` now or after v1?
+- **Repo name.** Decided 2026-11-16: the GitHub repo is now
+  `Aperturesurvivor/mastbound` (old URLs redirect).
 - **Daemon registration.** Decided in P5: keep the plist written by the
   installer. `SMAppService` keeps the daemon inside the app, which breaks I8.
 - **D6, list licenses.** Keep or drop the Clefspeare13 and brijrajparmar27

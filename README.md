@@ -14,10 +14,11 @@ impossible to undo.** An administrator of a Mac can always remove it. Read
 
 ## Status
 
-Pre-release. There is no app yet, only a command-line tool. The core is
-tested (see [docs/verification.md](docs/verification.md)), but some checks
-are still open: restart, power loss, sleep and wake, and real browsers. Do
-not rely on it yet.
+Pre-release. There is a Mac app and a command-line tool, but no signed
+release yet. The core is tested, and restarts and power cuts pass in a VM
+(see [docs/verification.md](docs/verification.md)). Some checks are still
+open: sleep and wake, real browsers, and the app's password prompts on a
+clean Mac. Do not rely on it yet.
 
 ## How it works
 

@@ -35,4 +35,4 @@ repository-wide security rules:
     `docs/verification.md` pass.
 
 Report suspected vulnerabilities privately through a
-[GitHub security advisory](https://github.com/Aperturesurvivor/Screen-Time-Roaster/security/advisories/new).
+[GitHub security advisory](https://github.com/Aperturesurvivor/mastbound/security/advisories/new).
