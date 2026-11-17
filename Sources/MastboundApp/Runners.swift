@@ -172,18 +172,23 @@ final class DemoRunner: CommandRunner, @unchecked Sendable {
         report.remainingSeconds = report.remainingSeconds.map { max(0, $0 - age) }
         report.recoveryRemainingSeconds = report.recoveryRemainingSeconds.map { max(0, $0 - age) }
         report.quitElapsedSeconds = report.quitElapsedSeconds.map { $0 + age }
+        report.elapsedSeconds = report.elapsedSeconds.map { $0 + age }
         report.updatedAt = Date()
         return report
     }
 
+    /// Keeps the time since the start across fake changes.
     private func set(_ new: StatusReport) {
+        let elapsed = (try? readStatus())?.elapsedSeconds
+        var new = new
+        if new.phase != .idle { new.elapsedSeconds = new.elapsedSeconds ?? elapsed ?? 0 }
         lock.lock(); report = new; lock.unlock()
     }
 }
 
 extension StatusReport {
     /// A fake report for the demo and for screenshots.
-    init(phase: Phase, remaining: Double?, recovery: Double? = nil, quitElapsed: Double? = nil, lastEnd: EndRecord? = nil) {
+    init(phase: Phase, remaining: Double?, recovery: Double? = nil, quitElapsed: Double? = nil, elapsed: Double? = nil, lastEnd: EndRecord? = nil) {
         let data = try! JSONSerialization.data(withJSONObject: [
             "phase": phase.rawValue,
             "updatedAt": ISO8601DateFormatter().string(from: Date()),
@@ -192,6 +197,7 @@ extension StatusReport {
         report.remainingSeconds = remaining
         report.recoveryRemainingSeconds = recovery
         report.quitElapsedSeconds = quitElapsed
+        report.elapsedSeconds = elapsed
         report.estimatedEnd = remaining.map { Date().addingTimeInterval($0) }
         report.lastEnd = lastEnd
         self = report

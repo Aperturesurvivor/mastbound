@@ -61,6 +61,12 @@ final class AppModel {
     /// Moves the countdown between reads without touching the file.
     func tick() { updateScreen() }
 
+    /// Credited time since the commitment started, as of now.
+    func elapsedNow() -> Double? {
+        guard let report, let elapsed = report.elapsedSeconds else { return nil }
+        return elapsed + max(0, Date().timeIntervalSince(report.updatedAt)) + Date().timeIntervalSince(readAt)
+    }
+
     private func updateScreen() {
         guard let report else { screen = .idle(lastEnd: nil); return }
         // status.json is written by the daemon, at most a few seconds old.

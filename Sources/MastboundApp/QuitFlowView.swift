@@ -34,16 +34,21 @@ struct QuitFlowView: View {
     let quitElapsed: Double?
     @State private var step: QuitStep
     @State private var began: Bool
+    /// Answers given faster than a careful person would. Three in a row of
+    /// these (not necessarily in a row) bring up the slow-down screen.
+    @State private var quickCount = 0
+    @State private var slowingDown: Bool
     /// ImageRenderer draws ScrollView content blank, so screenshots skip it.
     private let forSnapshot: Bool
 
-    init(model: AppModel, remaining: Double, quitElapsed: Double?, initialStep: QuitStep = .intro, forSnapshot: Bool = false) {
+    init(model: AppModel, remaining: Double, quitElapsed: Double?, initialStep: QuitStep = .intro, slowDown: Bool = false, forSnapshot: Bool = false) {
         self.model = model
         self.forSnapshot = forSnapshot
         self.remaining = remaining
         self.quitElapsed = quitElapsed
         _step = State(initialValue: initialStep)
         _began = State(initialValue: initialStep != .intro)
+        _slowingDown = State(initialValue: slowDown)
     }
 
     private var timing: QuitTiming { model.timing }
@@ -51,17 +56,14 @@ struct QuitFlowView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 8) {
-                HStack {
-                    Text("ENDING EARLY")
-                        .foregroundStyle(Theme.warning)
-                    Spacer()
-                    Text("STEP \(step.rawValue + 1) OF \(QuitStep.allCases.count)")
-                        .foregroundStyle(Theme.textTertiary)
-                        .monospacedDigit()
-                }
-                .font(.system(size: 11, weight: .semibold))
-                .tracking(0.8)
-                ProgressLine(fraction: Double(step.rawValue) / Double(QuitStep.allCases.count))
+                // No step count and no progress bar: the person does not
+                // get to see how much is left.
+                Text("ENDING EARLY")
+                    .foregroundStyle(Theme.textSecondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Rectangle().fill(Theme.surfaceRaised).frame(height: 1)
             }
             .padding(.top, 4)
 
@@ -91,13 +93,36 @@ struct QuitFlowView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(step.title)
+            Text(slowingDown ? "Slow down" : step.title)
                 .font(.system(size: 22, weight: .semibold))
                 .padding(.top, 18)
                 .padding(.bottom, 12)
-            stepBody
+            ZStack(alignment: .topLeading) {
+                // Kept alive under the slow-down screen, so no progress is lost.
+                stepBody
+                    .opacity(slowingDown ? 0 : 1)
+                    .disabled(slowingDown)
+                    .accessibilityHidden(slowingDown)
+                if slowingDown {
+                    SlowDownView {
+                        withAnimation(.easeOut(duration: 0.3)) { slowingDown = false }
+                    }
+                    .transition(.opacity)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Steps call this after each answer. Every third quick answer stops
+    /// the flow until the person drags the resisting slider and holds it.
+    private func pace(quick: Bool) {
+        guard quick else { return }
+        quickCount += 1
+        if quickCount >= 3 {
+            quickCount = 0
+            withAnimation(.easeOut(duration: 0.3)) { slowingDown = true }
+        }
     }
 
     private func next() {
@@ -112,10 +137,10 @@ struct QuitFlowView: View {
                 began = true
                 next()
             }
-        case .terms: TermsStep(remaining: remaining, timing: timing, done: next)
-        case .codes: CodesStep(timing: timing, done: next)
-        case .math: MathStep(timing: timing, done: next)
-        case .grid: GridStep(timing: timing, done: next)
+        case .terms: TermsStep(elapsed: model.elapsedNow(), timing: timing, pace: pace, done: next)
+        case .codes: CodesStep(timing: timing, pace: pace, done: next)
+        case .math: MathStep(timing: timing, pace: pace, done: next)
+        case .grid: GridStep(timing: timing, pace: pace, done: next)
         case .reasons: ReasonsStep(timing: timing, done: next)
         case .coolOff: CoolOffStep(timing: timing, done: next)
         case .hold: HoldStep(timing: timing, done: next)
@@ -126,20 +151,6 @@ struct QuitFlowView: View {
 }
 
 // MARK: - Shared parts
-
-private struct ProgressLine: View {
-    let fraction: Double
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Rectangle().fill(Theme.surfaceRaised)
-                Rectangle().fill(Theme.warning.opacity(0.8)).frame(width: geometry.size.width * fraction)
-            }
-        }
-        .frame(height: 2)
-        .animation(.easeOut(duration: 0.2), value: fraction)
-    }
-}
 
 private struct Prose: View {
     let text: String
@@ -217,7 +228,7 @@ private struct PenaltyNote: View {
             let left = penalty.secondsLeft(at: context.date)
             Text(left > 0 ? "Wrong. Try again in \(left) s." : " ")
                 .font(.system(size: 12))
-                .foregroundStyle(Theme.warning)
+                .foregroundStyle(Theme.textSecondary)
                 .padding(.top, 8)
         }
     }
@@ -256,33 +267,158 @@ private struct IntroStep: View {
     }
 }
 
+// MARK: - Slow down
+
+/// Shown after three quick answers. The person must drag a slider that
+/// resists more the further it goes, then hold it at the end.
+private struct SlowDownView: View {
+    let done: () -> Void
+    static let holdSeconds = 10.0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("You seem pretty eager to break your commitment. You should slow down.")
+                .font(.system(size: 20, weight: .light))
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 12)
+            ResistingSlider(holdSeconds: Self.holdSeconds, done: done)
+                .padding(.top, 36)
+        }
+    }
+}
+
+private struct ResistingSlider: View {
+    let holdSeconds: Double
+    let done: () -> Void
+    /// How far the pointer has moved, in points. The knob moves less and
+    /// less for each point: the last part needs about three times the
+    /// track's length of pull.
+    @State private var pull = 0.0
+    @State private var heldSince: Date?
+    @State private var held = 0.0
+    private let knob = 44.0
+    private let inset = 4.0
+
+    var body: some View {
+        VStack(spacing: 10) {
+            GeometryReader { geometry in
+                let travel = max(1, geometry.size.width - knob - inset * 2)
+                let fraction = 1 - exp(-pull / (travel * 0.6))
+                let atEnd = fraction >= 0.95
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.surface)
+                    Capsule().strokeBorder(Theme.stroke)
+                    Capsule().fill(Theme.surfaceRaised)
+                        .frame(width: knob + inset * 2 + travel * fraction)
+                    Text(atEnd ? "Keep holding" : "Slide to keep going")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textTertiary)
+                        .frame(maxWidth: .infinity)
+                        .opacity(atEnd ? 1 : max(0, 1 - fraction * 2))
+                    Circle()
+                        .fill(Theme.textPrimary)
+                        .frame(width: knob, height: knob)
+                        .overlay(
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Theme.background)
+                        )
+                        .offset(x: inset + travel * fraction)
+                        .gesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                                .onChanged { value in pull = max(0, value.translation.width) }
+                                .onEnded { _ in
+                                    withAnimation(.spring(response: 0.45, dampingFraction: 0.7)) { pull = 0 }
+                                }
+                        )
+                }
+                .onChange(of: atEnd) { _, now in heldSince = now ? Date() : nil }
+            }
+            .frame(height: knob + inset * 2)
+
+            // How long it has been held at the end.
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.surfaceRaised)
+                    Capsule().fill(Theme.textSecondary).frame(width: geometry.size.width * held)
+                }
+            }
+            .frame(height: 3)
+            .opacity(heldSince == nil ? 0 : 1)
+            Text(heldSince == nil ? " " : "\(Int((holdSeconds * (1 - held)).rounded(.up))) s")
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.textTertiary)
+                .monospacedDigit()
+        }
+        .task(id: heldSince) {
+            guard let start = heldSince else { held = 0; return }
+            while !Task.isCancelled {
+                held = min(1, Date().timeIntervalSince(start) / holdSeconds)
+                if held >= 1 { done(); return }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+    }
+}
+
 // MARK: - 2. Terms
 
 private struct TermsStep: View {
     let timing: QuitTiming
+    let pace: (_ quick: Bool) -> Void
     let done: () -> Void
+    @Environment(\.isSnapshot) private var isSnapshot
+    @State private var introDone = false
+    @State private var introShown = false
+    @State private var buttonShown = false
     @State private var terms: [String]
     @State private var index = 0
     @State private var shownAt = Date()
     @State private var typed = ""
     @State private var penalty = Penalty()
 
-    init(remaining: Double, timing: QuitTiming, done: @escaping () -> Void) {
+    init(elapsed: Double?, timing: QuitTiming, pace: @escaping (_ quick: Bool) -> Void, done: @escaping () -> Void) {
         self.timing = timing
+        self.pace = pace
         self.done = done
-        _terms = State(initialValue: QuitTerms.filled(remainingSeconds: remaining).shuffled())
+        _terms = State(initialValue: QuitTerms.filled(elapsedSeconds: elapsed).shuffled())
     }
 
     /// Every third term must be typed out in full.
     private var mustType: Bool { index % 3 == 2 }
 
     var body: some View {
+        if introDone { statements } else { intro }
+    }
+
+    /// A first screen that fades in slowly, before the statements.
+    private var intro: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Prose("Agree to all \(terms.count).")
+            Text("Read each statement. Agree to all \(terms.count) to go on.")
+                .font(.system(size: 20, weight: .light))
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 36)
+                .opacity(introShown || isSnapshot ? 1 : 0)
+            ForwardButton(title: "Continue", enabled: buttonShown) {
+                introDone = true
+                shownAt = Date()
+            }
+            .padding(.top, 24)
+            .opacity(buttonShown || isSnapshot ? 1 : 0)
+        }
+        .onAppear {
+            withAnimation(.easeIn(duration: 1.8)) { introShown = true }
+            withAnimation(.easeIn(duration: 0.6).delay(2.6)) { buttonShown = true }
+        }
+    }
+
+    private var statements: some View {
+        VStack(alignment: .leading, spacing: 0) {
             Text("TERM \(index + 1) OF \(terms.count)")
                 .font(.system(size: 11, weight: .semibold)).tracking(0.8)
                 .foregroundStyle(Theme.textTertiary)
-                .padding(.top, 16)
             Text(terms[index])
                 .font(.system(size: 15))
                 .lineSpacing(3)
@@ -302,6 +438,7 @@ private struct TermsStep: View {
                         ForwardButton(title: "Agree", enabled: !locked && !typed.isEmpty, action: checkTyped)
                     } else {
                         Button {
+                            pace(Date().timeIntervalSince(shownAt) - timing.termDelay < 1.5)
                             advance()
                         } label: {
                             HStack(spacing: 10) {
@@ -327,6 +464,8 @@ private struct TermsStep: View {
     private func checkTyped() {
         guard penalty.secondsLeft(at: Date()) == 0 else { return }
         if typed.trimmingCharacters(in: .whitespaces) == terms[index] {
+            // About 80 words a minute or faster.
+            pace(Date().timeIntervalSince(shownAt) < Double(terms[index].count) * 0.15)
             advance()
         } else {
             typed = ""
@@ -403,9 +542,11 @@ struct CaptchaImage: View {
 
 private struct CodesStep: View {
     let timing: QuitTiming
+    let pace: (_ quick: Bool) -> Void
     let done: () -> Void
     static let rounds = 5
     @State private var round = 0
+    @State private var shownAt = Date()
     @State private var code = CaptchaCode.random()
     @State private var typed = ""
     @State private var penalty = Penalty()
@@ -416,7 +557,7 @@ private struct CodesStep: View {
             CaptchaImage(code: code).padding(.top, 14)
             HStack {
                 Spacer()
-                Button("New code") { code = .random(); typed = "" }
+                Button("New code") { code = .random(); typed = ""; shownAt = Date() }
                     .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(Theme.textSecondary)
             }
             .padding(.vertical, 8)
@@ -433,12 +574,14 @@ private struct CodesStep: View {
         let answer = typed.uppercased().filter { !$0.isWhitespace }
         typed = ""
         if answer == code.text {
+            pace(Date().timeIntervalSince(shownAt) < 5)
             round += 1
             if round == Self.rounds { done() }
         } else {
             penalty.start(timing.penalty)
         }
         code = .random()
+        shownAt = Date()
     }
 }
 
@@ -446,9 +589,11 @@ private struct CodesStep: View {
 
 private struct MathStep: View {
     let timing: QuitTiming
+    let pace: (_ quick: Bool) -> Void
     let done: () -> Void
     static let rounds = 5
     @State private var round = 0
+    @State private var shownAt = Date()
     @State private var problem = Problem.random()
     @State private var typed = ""
     @State private var penalty = Penalty()
@@ -480,12 +625,14 @@ private struct MathStep: View {
         let answer = Int(typed.filter { $0.isNumber || $0 == "-" })
         typed = ""
         if answer == problem.answer {
+            pace(Date().timeIntervalSince(shownAt) < 10)
             round += 1
             if round == Self.rounds { done() }
         } else {
             penalty.start(timing.penalty)
         }
         problem = .random()
+        shownAt = Date()
     }
 }
 
@@ -493,9 +640,11 @@ private struct MathStep: View {
 
 private struct GridStep: View {
     let timing: QuitTiming
+    let pace: (_ quick: Bool) -> Void
     let done: () -> Void
     static let rounds = 3
     @State private var round = 0
+    @State private var shownAt = Date()
     @State private var grid = Grid.random()
     @State private var selected: Set<Int> = []
     @State private var penalty = Penalty()
@@ -554,6 +703,7 @@ private struct GridStep: View {
     private func check() {
         guard penalty.secondsLeft(at: Date()) == 0 else { return }
         if selected == grid.answer {
+            pace(Date().timeIntervalSince(shownAt) < 5)
             round += 1
             if round == Self.rounds { done(); return }
         } else {
@@ -561,6 +711,7 @@ private struct GridStep: View {
         }
         selected = []
         grid = .random()
+        shownAt = Date()
     }
 }
 
@@ -654,7 +805,7 @@ private struct HoldStep: View {
             ZStack {
                 Circle().stroke(Theme.surfaceRaised, lineWidth: 6)
                 Circle().trim(from: 0, to: progress)
-                    .stroke(Theme.warning, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .stroke(Theme.textPrimary, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text(pressing ? "\(Int((timing.hold * (1 - progress)).rounded(.up))) s" : "Hold")
                     .font(.system(size: 20, weight: .light))
@@ -766,7 +917,6 @@ private struct FinalStep: View {
                 Task { _ = await model.finishQuit() }
             }
             .buttonStyle(SecondaryButtonStyle())
-            .foregroundStyle(Theme.warning)
             .disabled(wait > 0 || !understood || typed != "END" || model.isBusy)
             .padding(.top, 16)
         }

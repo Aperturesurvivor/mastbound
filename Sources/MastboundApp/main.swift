@@ -49,13 +49,14 @@ enum Snapshots {
             ("4-recovering", .recovering(remaining: 12 * day + 2 * 3_600, recoveryRemaining: 61 * 3_600 + 14 * 60, end: Date().addingTimeInterval(12 * day))),
             ("5-problem", .problem("Mastbound could not read its status. The block, if any, stays on.")),
         ]
-        var all: [(String, Screen, QuitStep?)] = shots.map { ($0.0, $0.1, nil) }
+        var all: [(String, Screen, QuitStep?, Bool)] = shots.map { ($0.0, $0.1, nil, false) }
         let open = Screen.active(remaining: 29 * day + 13 * 3_600, end: nil, quitElapsed: 41 * 60)
         for step in QuitStep.allCases {
-            all.append(("6-quit-\(step.rawValue + 1)-\(step)", open, step))
+            all.append(("6-quit-\(step.rawValue + 1)-\(step)", open, step, false))
         }
-        for (name, screen, step) in all {
-            let renderer = ImageRenderer(content: RootView(model: model, fixedScreen: screen, fixedQuitStep: step))
+        all.append(("6-quit-slow-down", open, .codes, true))
+        for (name, screen, step, slowDown) in all {
+            let renderer = ImageRenderer(content: RootView(model: model, fixedScreen: screen, fixedQuitStep: step, fixedSlowDown: slowDown))
             renderer.scale = 2
             guard let image = renderer.nsImage,
                   let tiff = image.tiffRepresentation,

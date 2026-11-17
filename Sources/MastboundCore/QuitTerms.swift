@@ -1,13 +1,14 @@
 import Foundation
 
-/// The statements a person must agree to before an early end in the app. `{days}` and `{delay}` are filled in.
+/// The statements a person must agree to before an early end in the app.
+/// `{progress}` and `{delay}` are filled in.
 public enum QuitTerms {
     public static let statements = [
         "I'm quitting because I care more about my carnal desires than human connection.",
         "I am choosing a screen over the people who love me.",
         "I made this commitment with a clear head, and I am breaking it with a cloudy one.",
         "I know this urge will pass whether or not I give in to it.",
-        "I am trading {days} of progress for a few minutes.",
+        "I am trading {progress} for a few minutes.",
         "I would not want the people I respect to watch me do this.",
         "Nobody is making me do this. This is my choice, and mine alone.",
         "I am not quitting because the block is broken. I am quitting because I am weak right now.",
@@ -30,10 +31,22 @@ public enum QuitTerms {
             : "\(Int(Policy.recoveryDelaySeconds / 60)) minutes"
     }
 
-    public static func filled(remainingSeconds: Double) -> [String] {
-        let days = daysText(remainingSeconds: remainingSeconds)
+    /// The exact time kept so far: "3 days and 4 hours", "5 hours and
+    /// 12 minutes", "1 minute".
+    public static func progressText(elapsedSeconds: Double) -> String {
+        func unit(_ n: Int, _ name: String) -> String { n == 1 ? "1 \(name)" : "\(n) \(name)s" }
+        let total = max(0, Int(elapsedSeconds))
+        let days = total / 86_400, hours = (total % 86_400) / 3_600, minutes = (total % 3_600) / 60
+        if days > 0 { return hours > 0 ? "\(unit(days, "day")) and \(unit(hours, "hour"))" : unit(days, "day") }
+        if hours > 0 { return minutes > 0 ? "\(unit(hours, "hour")) and \(unit(minutes, "minute"))" : unit(hours, "hour") }
+        return unit(max(1, minutes), "minute")
+    }
+
+    /// `elapsedSeconds` is the credited time since the commitment started.
+    public static func filled(elapsedSeconds: Double?) -> [String] {
+        let progress = elapsedSeconds.map { "\(progressText(elapsedSeconds: $0)) of progress" } ?? "my progress"
         return statements.map {
-            $0.replacingOccurrences(of: "{days}", with: days).replacingOccurrences(of: "{delay}", with: delayText)
+            $0.replacingOccurrences(of: "{progress}", with: progress).replacingOccurrences(of: "{delay}", with: delayText)
         }
     }
 }

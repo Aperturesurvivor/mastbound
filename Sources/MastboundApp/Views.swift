@@ -7,6 +7,7 @@ struct RootView: View {
     var fixedScreen: Screen?
     /// Screenshots of the early-end flow.
     var fixedQuitStep: QuitStep?
+    var fixedSlowDown = false
 
     var body: some View {
         let screen = fixedScreen ?? model.screen
@@ -20,7 +21,7 @@ struct RootView: View {
                     StartView(model: model, lastEnd: lastEnd)
                 case .active(let remaining, let end, let quitElapsed):
                     if let step = fixedQuitStep {
-                        QuitFlowView(model: model, remaining: remaining, quitElapsed: quitElapsed, initialStep: step, forSnapshot: true)
+                        QuitFlowView(model: model, remaining: remaining, quitElapsed: quitElapsed, initialStep: step, slowDown: fixedSlowDown, forSnapshot: true)
                     } else if model.quitFlowOpen {
                         QuitFlowView(model: model, remaining: remaining, quitElapsed: quitElapsed)
                     } else {
@@ -174,7 +175,7 @@ struct StartView: View {
 
             Text(confirming ? "Ending early takes over an hour, then \(QuitTerms.delayText) more." : "You will be asked for your Mac password.")
                 .font(.system(size: 11))
-                .foregroundStyle(confirming ? Theme.warning : Theme.textTertiary)
+                .foregroundStyle(Theme.textTertiary)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 10)
         }
@@ -279,7 +280,7 @@ struct ActiveView: View {
             Text(recoveryRemaining != nil ? "ENDING EARLY" : "TIME LEFT")
                 .font(.system(size: 11, weight: .semibold))
                 .tracking(0.8)
-                .foregroundStyle(recoveryRemaining != nil ? Theme.warning : Theme.textTertiary)
+                .foregroundStyle(Theme.textTertiary)
             // During an early end, count down to when the block really ends.
             Countdown(seconds: recoveryRemaining ?? remaining).padding(.top, 14)
             if let end = recoveryRemaining.map({ Date().addingTimeInterval($0) }) ?? end {
@@ -294,7 +295,7 @@ struct ActiveView: View {
             } else if quitElapsed != nil {
                 Text("An early end was started and not finished. It lapses on its own.")
                     .font(.system(size: 12))
-                    .foregroundStyle(Theme.warning)
+                    .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.top, 28)
             }
@@ -410,7 +411,7 @@ private struct ProblemView: View {
             Spacer()
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 26, weight: .light))
-                .foregroundStyle(Theme.warning)
+                .foregroundStyle(Theme.textSecondary)
             Text(message)
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)

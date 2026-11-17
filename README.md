@@ -87,7 +87,9 @@ and it ends in a 72-hour wait.
 9. Type the number of full days left and `I want to end my commitment early`.
 10. Tick a box, type `END`, and enter the admin password again.
 
-A wrong answer locks that step for 20 seconds (60 seconds in step 9) and
+Three answers that come too fast bring up a "Slow down" screen: a slider
+that resists more the further it goes, held at the end for 10 seconds.
+The app does not show which step you are on. A wrong answer locks that step for 20 seconds (60 seconds in step 9) and
 gives a new puzzle. Closing the app drops all progress. The service itself
 refuses step 10 until step 1 was at least 1 hour ago, so skipping the app's
 steps does not make it faster. An unfinished flow lapses after 4 hours.

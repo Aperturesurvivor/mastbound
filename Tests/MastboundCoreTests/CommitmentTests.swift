@@ -339,3 +339,18 @@ struct QuitFlowGateTests {
         #expect(throws: MastboundError.self) { try bad.validated() }
     }
 }
+
+@Suite("Quit terms text")
+struct QuitTermsTextTests {
+    @Test("The progress statement shows the exact time kept so far")
+    func progress() {
+        #expect(QuitTerms.progressText(elapsedSeconds: 3 * 86_400 + 4 * 3_600 + 59) == "3 days and 4 hours")
+        #expect(QuitTerms.progressText(elapsedSeconds: 86_400) == "1 day")
+        #expect(QuitTerms.progressText(elapsedSeconds: 5 * 3_600 + 12 * 60) == "5 hours and 12 minutes")
+        #expect(QuitTerms.progressText(elapsedSeconds: 3_600 + 60) == "1 hour and 1 minute")
+        #expect(QuitTerms.progressText(elapsedSeconds: 20) == "1 minute")
+        let filled = QuitTerms.filled(elapsedSeconds: 2 * 3_600)
+        #expect(filled.contains("I am trading 2 hours of progress for a few minutes."))
+        #expect(!filled.joined().contains("{"))
+    }
+}
