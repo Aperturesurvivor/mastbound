@@ -257,3 +257,26 @@ the same documented limit as `launchctl bootout` (S9), with an easier way in.
   switch.
 
 **Not verified:** the new error text when the switch is off during `start`.
+
+## Release 0.1.0 DMG — 2026-11-18
+
+`script/release.sh` built `dist/Mastbound-0.1.0.dmg` (SHA-256
+`c57c1ca1b41cee62b1f0aa3bb2c3cdee1a9eda3c577de70efa842b419dea7187`).
+Apple notarization: Accepted (submission f62b9386-d5bd-4ff6-af02-cbe336634507),
+ticket stapled. Tested in a fresh clone of the clean base VM (macOS 26.6.2,
+no Mastbound before), with the DMG marked as downloaded by Safari
+(`com.apple.quarantine`).
+
+| Check | Result |
+| --- | --- |
+| `spctl` on the downloaded DMG: accepted, "Notarized Developer ID" | PASS |
+| `spctl` on the app copied to /Applications (quarantine kept): accepted | PASS |
+| `mastboundd`, `mastboundctl`: Developer ID, hardened runtime, team TXWB2TUKP2 | PASS |
+| The app's start steps (root-owned stage, then `start --minutes 60`) | PASS |
+| Daemon running under launchd; block in `/etc/hosts` (63,312 lines) | PASS |
+| A listed site resolves to `0.0.0.0` | PASS |
+| Login Items shows the developer as "Josiah Wilson" | PASS |
+| The app opens | PASS |
+
+The admin password prompt itself was not shown in this run (it was tested
+with the ad-hoc test build on 2026-11-17).
