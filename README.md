@@ -70,6 +70,7 @@ Files:
 | `/Library/Application Support/Mastbound/status.json` | Phase and end date, readable by everyone |
 | `/Library/LaunchDaemons/com.josiahwilson.mastbound.plist` | The `launchd` job |
 | `/etc/hosts` | One section between `# BEGIN MASTBOUND — MANAGED BLOCK` and `# END MASTBOUND — MANAGED BLOCK` |
+| `/etc/resolver/` | One file per top site, each starting with `# Mastbound: managed file` |
 
 ## Commands
 
@@ -150,6 +151,11 @@ commitment, so a clock change does not skip them.
   - apps that do not use the system resolver or `/etc/hosts`. Chrome and
     Firefox read `/etc/hosts` first, also with DNS over HTTPS on (tested).
     iCloud Private Relay is not tested.
+- Safari also asks DNS for "HTTPS" records, which `/etc/hosts` cannot
+  answer; the answer can carry a site's real address. Mastbound closes this
+  for the 4,000 most visited listed sites (ranked by the Tranco list) with
+  files in `/etc/resolver`. macOS fails with more than about 6,000 such
+  files, so the other, rarely visited listed sites can still load in Safari.
 - The list is not complete and can block a site by mistake. No list can
   find every adult site.
 - It does not work on iPhone or iPad.

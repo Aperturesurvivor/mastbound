@@ -30,3 +30,17 @@ License texts are in `Resources/licenses/` and must ship with the list:
 Not used (decision D6, 2026-11-16): Clefspeare13 pornhosts (its repository is
 blocked by GitHub, so its license notice cannot be read) and brijrajparmar27
 (no license file). Every source above has a license text in this repo.
+
+# Domain popularity ranking attribution
+
+`Resources/resolver-domains.txt` ranks the root domains of the blocklist by
+popularity. It uses the [Tranco](https://tranco-list.eu) top-1M list, ID
+`V38GN` (2026-11-17), at https://tranco-list.eu/list/V38GN/1000000. It is
+built by `script/make-resolver-list.sh`. Only the rank order is kept, not the
+Tranco list itself.
+
+Citation requested by Tranco: Victor Le Pochat, Tom Van Goethem, Samaneh
+Tajalizadehkhoob, Maciej Korczynski, and Wouter Joosen. "Tranco: A
+Research-Oriented Top Sites Ranking Hardened Against Manipulation."
+Proceedings of the 26th Annual Network and Distributed System Security
+Symposium (NDSS 2019). https://doi.org/10.14722/ndss.2019.23386

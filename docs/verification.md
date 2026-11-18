@@ -280,3 +280,36 @@ no Mastbound before), with the DMG marked as downloaded by Safari
 
 The admin password prompt itself was not shown in this run (it was tested
 with the ad-hoc test build on 2026-11-17).
+
+## Safari HTTPS-record bypass — 2026-11-18
+
+**Found on the main Mac** with the 0.1.0 DMG: a Safari private window loaded
+`4chan.org` while `/etc/hosts` blocked it. A connection monitor saw Safari's
+WebKit network process connect to the site's real address. Cause: Safari asks
+for DNS HTTPS records (type 65). `/etc/hosts` only answers A and AAAA, so
+`mDNSResponder` asks the real DNS server, and the answer carries the
+addresses as `ipv4hint`/`ipv6hint`.
+
+**Fix:** files in `/etc/resolver/` (resolver(5)) for the most visited listed
+domains send every DNS question for them to `127.0.0.1` port 9, where
+nothing answers. `ResolverFiles` manages only files that start with its
+marker and removes them at the end. The ranking is the Tranco list `V38GN`
+(`Resources/resolver-domains.txt`, `script/make-resolver-list.sh`): 6,593
+of 44,001 root domains are in the top million.
+
+**Limit (VM, macOS 26.6.2):** `configd` publishes up to 6,000 resolver files
+(5,500 and 6,000 pass, also after a reboot); from 6,500 it publishes no DNS
+setup at all ("No DNS configuration available"). Mastbound uses 4,000.
+
+| Check (VM, release commitment running) | Result |
+| --- | --- |
+| `mastboundctl install` of the new daemon keeps the commitment | PASS |
+| 4,000 files written, root:wheel 0644; `scutil --dns` lists 4,008 resolvers | PASS |
+| `dns-sd -Q 4chan.org 65`: no answer; `boards.4chan.org` too | PASS |
+| `4chan.org` A lookup still `0.0.0.0` | PASS |
+| `cloudflare.com` HTTPS record still answered; github.com loads | PASS |
+| Reboot: 4,000 files, 4,008 resolvers, HTTPS record still blocked | PASS |
+| 116 unit and integration tests (13 new for resolver files) | PASS |
+
+**Not covered:** the ~40,000 listed domains outside the top 4,000 can still
+load in Safari through the HTTPS hint.

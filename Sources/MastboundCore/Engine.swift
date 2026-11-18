@@ -15,6 +15,10 @@ public struct Engine: Sendable {
     public let clock: @Sendable () throws -> ClockReading
     /// Called after `/etc/hosts` changes, to flush DNS caches.
     public let afterHostsChange: @Sendable () -> Void
+    /// Domains by popularity; the first `resolverLimit` blocked ones also get
+    /// a resolver file (see `ResolverFiles`).
+    public let resolverRanking: [String]
+    public let resolverLimit: Int
     /// Per-engine memory of checked files. The daemon keeps one engine for
     /// its whole life; each `mastboundctl` run starts with an empty cache.
     let cache = EngineCache()
@@ -29,8 +33,12 @@ public struct Engine: Sendable {
         paths: Paths,
         bundledListSHA256: String,
         clock: @escaping @Sendable () throws -> ClockReading,
-        afterHostsChange: @escaping @Sendable () -> Void = {}
+        afterHostsChange: @escaping @Sendable () -> Void = {},
+        resolverRanking: [String] = ResolverRanking.domains,
+        resolverLimit: Int = ResolverFiles.limit
     ) {
+        self.resolverRanking = resolverRanking
+        self.resolverLimit = resolverLimit
         self.paths = paths
         self.bundledListSHA256 = bundledListSHA256
         self.clock = clock
@@ -40,6 +48,7 @@ public struct Engine: Sendable {
     public struct Report: Equatable, Sendable {
         public var phase: Phase
         public var hostsChanged: Bool
+        public var resolverFilesChanged = false
         public var stateSaved: Bool
         /// Problems that did not stop enforcement, for the log.
         public var warnings: [String]
@@ -93,6 +102,26 @@ public struct Engine: Sendable {
             cache.setVerifiedHosts(signature: try FileSignature(of: paths.hostsFile), blockID: desired.id)
         }
 
+        // Resolver files close the HTTPS-record gap for the most visited
+        // domains. A failure here never undoes the hosts block above.
+        let resolverSignature = try? FileSignature(of: paths.resolverDirectory)
+        if !cache.verifiedResolver(signature: resolverSignature, blockID: desired.id) {
+            do {
+                let result = try ResolverFiles.sync(
+                    directory: paths.resolverDirectory, wanted: desired.resolverDomains,
+                    owner: paths.owner, group: paths.group
+                )
+                report.warnings += result.warnings
+                if result.changed {
+                    report.resolverFilesChanged = true
+                    afterHostsChange()
+                }
+                cache.setVerifiedResolver(signature: try? FileSignature(of: paths.resolverDirectory), blockID: desired.id)
+            } catch {
+                report.warnings.append("Resolver files not updated: \(error.localizedDescription)")
+            }
+        }
+
         if next.phase == .idle {
             try removeIfPresent(paths.lockedListFile)
         }
@@ -103,7 +132,9 @@ public struct Engine: Sendable {
         /// Changes whenever the set of domains changes.
         var id: String
         var domains: [String]
-        static let none = DesiredBlock(id: "none", domains: [])
+        /// The subset that also gets a resolver file.
+        var resolverDomains: [String]
+        static let none = DesiredBlock(id: "none", domains: [], resolverDomains: [])
     }
 
     /// The domains to block while a commitment runs: the list locked at start
@@ -127,10 +158,13 @@ public struct Engine: Sendable {
             throw MastboundError.invalidList("No valid list is available; the current block is kept.")
         }
         let id = Set(lists.map(\.sha256)).sorted().joined(separator: "+")
-        if let domains = cache.union(id: id) { return DesiredBlock(id: id, domains: domains) }
+        if let cached = cache.union(id: id) {
+            return DesiredBlock(id: id, domains: cached.domains, resolverDomains: cached.resolverDomains)
+        }
         let domains = try Enforcement.blockedDomains(for: state, lists: lists.map(\.domains))
-        cache.setUnion(id: id, domains: domains)
-        return DesiredBlock(id: id, domains: domains)
+        let resolverDomains = ResolverFiles.wanted(ranking: resolverRanking, blocked: Set(domains), limit: resolverLimit)
+        cache.setUnion(id: id, domains: domains, resolverDomains: resolverDomains)
+        return DesiredBlock(id: id, domains: domains, resolverDomains: resolverDomains)
     }
 
     /// Reads and checks a list, or returns the cached copy if the file has
@@ -238,6 +272,7 @@ public struct Engine: Sendable {
                 )
                 afterHostsChange()
             }
+            if try ResolverFiles.removeAll(directory: paths.resolverDirectory) { afterHostsChange() }
             for file in [paths.lockedListFile, paths.stateFile, paths.statusFile] {
                 try removeIfPresent(file)
             }

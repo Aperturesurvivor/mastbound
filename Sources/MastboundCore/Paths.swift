@@ -11,6 +11,8 @@ public struct Paths: Sendable, Equatable {
     /// Root-owned folder for the installed daemon, tool and list (I8).
     public var helperDirectory: URL
     public var hostsFile: URL
+    /// Per-domain DNS settings (resolver(5)). See `ResolverFiles`.
+    public var resolverDirectory: URL
     public var launchDaemonPlist: URL
     /// Owner of every file Mastbound writes. Root (0) on a real system.
     public var owner: uid_t
@@ -38,6 +40,7 @@ public struct Paths: Sendable, Equatable {
         stateDirectory: URL(fileURLWithPath: "/Library/Application Support/Mastbound", isDirectory: true),
         helperDirectory: URL(fileURLWithPath: "/Library/PrivilegedHelperTools/Mastbound", isDirectory: true),
         hostsFile: URL(fileURLWithPath: "/etc/hosts"),
+        resolverDirectory: URL(fileURLWithPath: "/etc/resolver", isDirectory: true),
         launchDaemonPlist: URL(fileURLWithPath: "/Library/LaunchDaemons/\(launchDaemonLabel).plist"),
         owner: 0,
         group: 0
@@ -49,6 +52,7 @@ public struct Paths: Sendable, Equatable {
             stateDirectory: root.appendingPathComponent("state", isDirectory: true),
             helperDirectory: root.appendingPathComponent("helper", isDirectory: true),
             hostsFile: root.appendingPathComponent("hosts"),
+            resolverDirectory: root.appendingPathComponent("resolver", isDirectory: true),
             launchDaemonPlist: root.appendingPathComponent("\(launchDaemonLabel).plist"),
             owner: getuid(),
             group: getgid()
