@@ -14,11 +14,38 @@ impossible to undo.** An administrator of a Mac can always remove it. Read
 
 ## Status
 
-Pre-release. There is a Mac app and a command-line tool, but no signed
-release yet. The core is tested, and restarts and power cuts pass in a VM
-(see [docs/verification.md](docs/verification.md)). Some checks are still
-open: sleep and wake, real browsers, and the app's password prompts on a
-clean Mac. Do not rely on it yet.
+Version 0.1.0, the first release. It needs macOS 14 or later.
+
+Tested in a macOS VM (see [docs/verification.md](docs/verification.md)):
+restarts, power cuts, clock changes, VM suspend, the full early-end flow with
+both password prompts, the Login Items switch, and Chrome and Firefox with
+DNS over HTTPS forced on. Not tested yet: sleep on a real Mac, Safari
+itself, VPNs, iCloud Private Relay, and Intel Macs.
+
+## Install
+
+1. Download `Mastbound-0.1.0.dmg` from
+   [Releases](https://github.com/Aperturesurvivor/mastbound/releases).
+2. Open it and drag Mastbound to Applications.
+3. Open Mastbound, choose a duration and click Start. macOS asks for an
+   administrator password to install the background service.
+
+The app is signed with a Developer ID and notarized by Apple.
+
+macOS lists the service as "mastboundd" under System Settings → General →
+Login Items & Extensions. Leave it on. If it is turned off, the block stays,
+but the commitment cannot end until it is on again; the app shows this.
+
+## Remove
+
+When no commitment is active:
+
+```sh
+sudo /Library/PrivilegedHelperTools/Mastbound/mastboundctl uninstall
+```
+
+Then move Mastbound from Applications to the Trash. Deleting the app alone
+does not remove the service or the block.
 
 ## How it works
 
@@ -107,10 +134,10 @@ commitment, so a clock change does not skip them.
 ## What Mastbound cannot do
 
 - **An administrator can remove the block at any time.** For example,
-  `sudo launchctl bootout system/com.josiahwilson.mastbound` stops the
-  service, and then `/etc/hosts` can be edited by hand. The "Allow in the
-  Background" switch in System Settings → General → Login Items can also
-  stop the service. Mastbound cannot stop this.
+  `sudo launchctl bootout system/com.josiahwilson.mastbound`, or the
+  "mastboundd" switch in System Settings → General → Login Items, stops the
+  service. Then `/etc/hosts` can be edited by hand. Mastbound cannot stop
+  this.
 - macOS Recovery, or another Mac with the disk attached, can edit
   `/etc/hosts`.
 - A clock change made while the Mac is off is accepted. After a restart the
@@ -120,8 +147,9 @@ commitment, so a clock change does not skip them.
   - subdomains or sites that are not in the list,
   - IP addresses,
   - VPNs, remote proxies, Tor, or remote desktops,
-  - apps or browsers that do not use the system resolver. DNS-over-HTTPS and
-    iCloud Private Relay are not tested yet.
+  - apps that do not use the system resolver or `/etc/hosts`. Chrome and
+    Firefox read `/etc/hosts` first, also with DNS over HTTPS on (tested).
+    iCloud Private Relay is not tested.
 - The list is not complete and can block a site by mistake. No list can
   find every adult site.
 - It does not work on iPhone or iPad.
