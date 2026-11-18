@@ -90,10 +90,16 @@ cd "$ROOT_DIR"
 
 # The daemon reads the ranking from a generated Swift file, so it needs no
 # extra installed file.
-/usr/bin/python3 -I - Resources/resolver-domains.txt Sources/MastboundCore/ResolverRanking.swift <<'PY'
+# Resources/resolver-exclude.txt names domains that serve much non-adult
+# content under subdomains; they keep only their exact /etc/hosts entries.
+/usr/bin/python3 -I - Resources/resolver-domains.txt Resources/resolver-exclude.txt Sources/MastboundCore/ResolverRanking.swift <<'PY'
 import sys
-src, dst = sys.argv[1], sys.argv[2]
+src, exclude_path, dst = sys.argv[1], sys.argv[2], sys.argv[3]
+exclude = {l.strip() for l in open(exclude_path, encoding="utf-8") if l.strip() and not l.startswith("#")}
 lines = [l.strip() for l in open(src, encoding="utf-8") if l.strip() and not l.startswith("#")]
+missing = exclude - set(lines)
+assert not missing, "excluded domains not in the ranking: %s" % sorted(missing)
+lines = [d for d in lines if d not in exclude]
 allowed = set("abcdefghijklmnopqrstuvwxyz0123456789-.")
 assert all(set(d) <= allowed for d in lines), "unexpected character in a domain"
 with open(dst, "w", encoding="utf-8") as f:

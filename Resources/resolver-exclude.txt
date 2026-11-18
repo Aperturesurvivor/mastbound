@@ -1,0 +1,81 @@
+# Domains that never get an /etc/resolver file, because a resolver file blocks
+# every subdomain and these serve much non-adult content. They stay blocked by
+# exact name in /etc/hosts. Read by script/make-resolver-list.sh.
+#
+# CDNs, payment, counters, profile URIs
+hwcdn.net
+ccbill.com
+payserve.com
+extremetracking.com
+extreme-dm.com
+gmpg.org
+# Large general sites and shops
+fc2.com
+dmm.co.jp
+yandex.by
+kinopoisk.ru
+ekstrabladet.dk
+refinery29.com
+thechive.com
+startpagina.nl
+box.sk
+booth.pm
+shopmaker.com
+dlsite.com
+melonbooks.co.jp
+ebookrenta.com
+jlist.com
+# Sites that are not adult sites
+xyzprinting.com
+dieoff.org
+gaystarnews.com
+virginradio.fr
+myconfinedspace.com
+museumofsex.com
+cannaweed.com
+loveshack.org
+# General file, image and video hosts (their subdomains serve other sites)
+streamtape.com
+tapecontent.net
+dood.li
+mxload.org
+streamruby.com
+bigwarp.io
+vidmos.org
+k2s.cc
+keep2share.cc
+tezfiles.com
+filefactory.com
+filesor.com
+filestube.com
+uploadhouse.com
+chomikuj.pl
+yapfiles.ru
+hostave3.net
+bunkr.cr
+bunkr.ru
+bunkr.pk
+bunkr.si
+bunkr.site
+bunkr.ws
+bunkr.fi
+bunkr.black
+bunkr.sk
+bunkr.media
+pixhost.to
+imx.to
+imagetwist.com
+imageban.ru
+imgspice.com
+pimpandhost.com
+imgfy.net
+imagepost.com
+depic.me
+mobypicture.com
+radikal.ru
+fastpic.ru
+# Blog networks
+xblognetwork.com
+relayblog.com
+blogbugs.org
+allproblog.com

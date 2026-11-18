@@ -21,11 +21,9 @@ pimpbunny.com
 tnaflix.com
 faphouse.com
 xhamster.desi
-dmm.co.jp
 xhaccess.com
 rule34.xxx
 pornpics.com
-dlsite.com
 xhamster2.com
 fetlife.com
 spankbang.com
@@ -59,7 +57,6 @@ fpo.xxx
 ukdevilz.com
 beeg.porn
 inxxx.com
-ekstrabladet.dk
 milfporn.tv
 imagefap.com
 xxxbp.tv
@@ -120,7 +117,6 @@ kir2kos.net
 skipthegames.com
 tube8.fr
 pornhat.one
-fc2.com
 sexalarab.com
 zbporn.tv
 xorgasmo.com
@@ -150,7 +146,6 @@ desitelugusex.com
 strpst.com
 xnxx-cdn.com
 xhamsterlive.com
-kinopoisk.ru
 f95zone.to
 xxxbule.com
 xhfanclub.com
@@ -158,11 +153,9 @@ xhfuck.com
 besthindiporn.com
 ahcdn.com
 nhentai.net
-yandex.by
 mjedge.net
 beeg.com
 1337x.to
-booth.pm
 fansly.com
 cam4.com
 tik.porn
@@ -171,7 +164,6 @@ xgroovy.com
 xxx.com
 4chan.org
 literotica.com
-pixhost.to
 toomics.com
 camsoda.com
 xfree.com
@@ -338,7 +330,6 @@ kissjav.li
 photoacompanhantes.com
 sexbebin.com
 gekso.org
-refinery29.com
 looti.net
 watchhentai.net
 garotacomlocal.com
@@ -401,7 +392,6 @@ auntmia.com
 sb-cd.com
 xmegadrive.com
 xxxjmp.com
-radikal.ru
 erothots1.com
 gemidos.tv
 justporn.com
@@ -423,7 +413,6 @@ fulldesisex.com
 mzansi247.com
 pornhindisex.com
 xvideo.vlog.br
-fastpic.ru
 juicyads.com
 xalabahia.com
 clips4sale.com
@@ -434,7 +423,6 @@ iwara.tv
 myavlive.com
 usersporn.com
 zproxy.org
-chomikuj.pl
 adultfriendfinder.com
 manyvids.com
 dditscdn.com
@@ -445,13 +433,11 @@ tubev.sex
 zbiornik.com
 txxx.com
 popcash.net
-imagetwist.com
 dcbosf.com
 analdin.com
 inkbunny.net
 lovense.com
 rutor.info
-bunkr.cr
 rule34vault.com
 freeones.com
 xhbig.com
@@ -494,7 +480,6 @@ alohatube.com
 anyporn.com
 megatube.xxx
 xxxi.porn
-melonbooks.co.jp
 gay0day.com
 poppen.de
 mature.nl
@@ -645,7 +630,6 @@ videosection.com
 trahkino.me
 baddiehub.com
 ebonygalore.com
-startpagina.nl
 thefap.net
 reactor.cc
 cdn3x.com
@@ -654,10 +638,8 @@ joi.com
 knuddels.de
 animalsexporntube.com
 rdtcdn.com
-extreme-dm.com
 520.jp
 esthe-ranking.jp
-tapecontent.net
 evooli.com
 joyreactor.cc
 xgx.mobi
@@ -667,7 +649,6 @@ oohcams.com
 tophd.xxx
 hsex.tv
 sexable.tv
-k2s.cc
 xxx-xxx.click
 vermangasporno.com
 sextpanther.com
@@ -677,7 +658,6 @@ anyhdmovie.com
 desivids.pro
 scrolller.com
 tescort.com
-imageban.ru
 icfcdn.com
 gptgirlfriend.online
 niadd.com
@@ -688,22 +668,17 @@ proxyadult.org
 porndig.com
 livemediahost.com
 xhvid1.com
-streamtape.com
 secrets.ai
 lemoncams.com
 nudevista.com
 booru.org
 bigporn.com
-bunkr.ru
-extremetracking.com
 voyeur-house.tv
 hidemyass.com
-gmpg.org
 hdsex.org
 xh.video
 nuvid.com
 theporn.how
-imx.to
 luscious.net
 hentai-foundry.com
 xvideos.red
@@ -716,11 +691,9 @@ opentor.org
 icegay.tv
 ashleymadison.com
 javhd.com
-filesor.com
 adameve.com
 ehgt.org
 gay.bingo
-ccbill.com
 proporn.com
 upornia.com
 hdzog.com
@@ -731,7 +704,6 @@ hentaihaven.xxx
 contentabc.com
 peekvids.com
 xhreal5.com
-yapfiles.ru
 xv-cdn.net
 nv7s.com
 kink.com
@@ -758,9 +730,7 @@ rabbitscams.sex
 stripchat.webcam
 hugetits.tv
 thatpervert.com
-hostave3.net
 txxx.tube
-filefactory.com
 superchat.live
 stripchat.run
 juicychat.ai
@@ -775,7 +745,6 @@ freechatnow.com
 blackmilftube.com
 xhlive.org
 porn.biz
-thechive.com
 bangbros.com
 stripchatlive.com
 hot.com
@@ -983,7 +952,6 @@ uiporn.com
 jizzberry.com
 xxxdan.com
 grannytube.tv
-bunkr.pk
 faperoni.com
 thebestfetishsites.com
 alphaporno.com
@@ -1084,7 +1052,6 @@ svscomics.com
 justthegays.com
 nudevista.net
 lelo.com
-tezfiles.com
 lewdzone.com
 hentasis1.top
 4gay.com
@@ -1332,7 +1299,6 @@ misskon.com
 manhwa18.com
 bravoteens.com
 preggophilia.com
-streamruby.com
 lesbosland.com
 javsubbed.net
 sexindrag.com
@@ -1389,7 +1355,6 @@ joyreactor.com
 trannytube.tv
 videotxxx.com
 animalsexporn.net
-mobypicture.com
 raped.ws
 mydaddy.cc
 hentaihome.net
@@ -1435,8 +1400,6 @@ javct.net
 knit.bid
 6annonce.net
 topjav.tv
-pimpandhost.com
-imgfy.net
 subsubfolder.com
 filmeshentai.com
 h-flash.com
@@ -1539,7 +1502,6 @@ streamray.com
 hispasexy.org
 nesaporn.com
 videospornogratisx.net
-hwcdn.net
 rajwap.cc
 veohentai.com
 voyeurflash.com
@@ -1655,7 +1617,6 @@ newarabsex.com
 pinkheartmovies.xyz
 pornoamateurlatino.net
 xfights.to
-box.sk
 santtas.com
 friendfinder.com
 videobaba.xyz
@@ -1910,7 +1871,6 @@ gaydemon.com
 passion.com
 tamilauntysex.rodeo
 shemaleflick.com
-filestube.com
 sensualgirls.org
 tbib.org
 v902.cc
@@ -2002,7 +1962,6 @@ hottmovs.com
 eccie.net
 xdating.com
 pornslash.com
-loveshack.org
 shineporn.com
 skyprivate.com
 devilhard.com
@@ -2060,7 +2019,6 @@ djav.org
 xxxlake.com
 swingtowns.com
 slixa.com
-gaystarnews.com
 xlilith.com
 iporntv.info
 xgent.com
@@ -2161,7 +2119,6 @@ schambereich.org
 wantedbabes.com
 thothub.mx
 porn7.net
-bunkr.si
 tubetria.mobi
 xporn-gifs.com
 boobsradar.com
@@ -2228,7 +2185,6 @@ rule34hentai.net
 bustymilftube.com
 borwap.pro
 tubeporn.com
-bunkr.site
 maturexl.com
 desi-porn.tube
 ballbusting.cc
@@ -2252,7 +2208,6 @@ realdoll.com
 coolsexnew.com
 ero-top.name
 3movs.xxx
-myconfinedspace.com
 chatruletka-18.com
 erfahreneladies.de
 camdownload.net
@@ -2282,7 +2237,6 @@ noodlemagazine.net
 eye.porn
 bongacams7.com
 iceporn.net
-uploadhouse.com
 ososedki.com
 pornxo.me
 bestpornstars.xxx
@@ -2361,8 +2315,6 @@ porndotcom.org
 xes.pl
 fuckedtube.xxx
 candidteens.net
-jlist.com
-vidmos.org
 baramangaonline.com
 hideproxy.me
 forced.love
@@ -2505,7 +2457,6 @@ soulkyn.com
 hyperinzerce.cz
 animal-hentai.com
 retrooh.com
-ebookrenta.com
 porngur.com
 171gifs.com
 seductivetease.com
@@ -2725,7 +2676,6 @@ autolinkweb.com
 gammaentertainment.com
 madthumbs.com
 masafun.com
-bunkr.ws
 nudevista.com.br
 hdfreeporn.net
 beeg.link
@@ -2748,14 +2698,12 @@ porngifs.ca
 sexcelebrity.net
 geilefrauen.pics
 pornclub.com
-bunkr.fi
 bondagewebcams.com
 undertow.club
 slavic-companions.com
 malewebcams.com
 porndiff.com
 pornky.com
-imagepost.com
 sexoic.com
 pornophotowomans.com
 truthordarepics.com
@@ -2810,7 +2758,6 @@ spizoo.com
 pornzo.net
 youjizzlive.com
 wantboobs.com
-cannaweed.com
 xxx-tracker.com
 porntubezoo.com
 xhmoon5.com
@@ -2871,7 +2818,6 @@ filmx.cyou
 alypics.com
 dropmasti.com
 bigbangempire.com
-xblognetwork.com
 zedporn.com
 ekonova.pro
 entensity.net
@@ -2929,7 +2875,6 @@ faps.club
 thebarchive.com
 wankgod.com
 theadultstories.com
-bigwarp.io
 videohardgratuiti.top
 pizdeparoase.top
 motherlesspics.com
@@ -2954,7 +2899,6 @@ ftopx.com
 gockhuat.net
 chatsex.xxx
 darkwanderer.net
-allproblog.com
 between-legs.com
 ero-advertising.com
 xxvidsx.com
@@ -3003,7 +2947,6 @@ afroporn.net
 hotscope.tv
 nothingtoxic.com
 pornyteen.com
-imgspice.com
 opensharing.org
 wafflegirl.com
 liveporn.tv
@@ -3012,7 +2955,6 @@ good-gay.com
 vrcosplayx.com
 amaturetube.com
 czechvr.com
-blogbugs.org
 dreamgf.ai
 xxxvideos247.com
 tubegalo.net
@@ -3036,7 +2978,6 @@ vibrogame.com
 xtoons.art
 wankz.com
 nurxxx.xxx
-bunkr.sk
 its.porn
 bdsm.one
 xvideos9.com
@@ -3108,7 +3049,6 @@ milftop.com
 leswebcams.com
 bestpornsites.tv
 mycamtv.com
-depic.me
 svideos.xxx
 maccms.la
 seancody.com
@@ -3206,7 +3146,6 @@ pornlab.xxx
 xxxmov.bond
 ashemale.com
 pornfactory.info
-relayblog.com
 homexxxvideo.net
 adultsclips.com
 hugetraffic.com
@@ -3234,7 +3173,6 @@ txxx.info
 vporn.com
 updatesz.com
 erkiss.live
-bunkr.black
 al4a.com
 r18hub.com
 humoron.com
@@ -3246,13 +3184,11 @@ sexpartnercommunity.com
 beeg-teens.com
 transtxxx.com
 slimteensex.com
-museumofsex.com
 pornrah.com
 bongacams.xxx
 lovehomeporn.com
 sexycandidgirls.com
 prothots.com
-payserve.com
 bigtitsxl.com
 unusualporn.net
 ukfucking.com
@@ -3390,7 +3326,6 @@ pornogram.tv
 transhero.com
 sweetcams.me
 analpornxl.com
-dieoff.org
 camcaps.net
 sex-studentki.love
 hdpornpics.com
@@ -3400,7 +3335,6 @@ bigboss.video
 hqporn.pics
 netfapx.com
 jav.hair
-xyzprinting.com
 sexynudes.tv
 xxxchina.asia
 iyalc.com
@@ -3425,7 +3359,6 @@ porn555.com
 hubite.com
 fundorado.com
 playporngames.com
-keep2share.cc
 pornoroulette.com
 nonktube.com
 devilsfilm.com
@@ -3608,7 +3541,6 @@ perversefamily.com
 nsfwr34.com
 mixfemdomcc.com
 coithienthai.com
-mxload.org
 lbtube.com
 amateureuro.com
 donpornovideos.com
@@ -3646,7 +3578,6 @@ dogjav.com
 sextubespot.com
 doujindesu.tv
 gfporntube.com
-virginradio.fr
 hqporno.com.br
 jizzbunker.net
 camwhores.biz
@@ -3688,7 +3619,6 @@ futanari.xxx
 firecams.com
 starwank.com
 telegram-groups.com
-shopmaker.com
 hotporntube.co
 nakedbabes.club
 uradvd-mura.com
@@ -3919,7 +3849,6 @@ theshemale.xxx
 camonster.com
 xamateurtube.com
 videosbag.com
-bunkr.media
 argentinaxp.com
 slutanal.com
 fuckbook.com
@@ -3932,7 +3861,6 @@ femout.xxx
 qosvideos.com
 humoronline.com
 publicsexhub.com
-dood.li
 3pornstarmovies.com
 onporn.fun
 bubbleclips.com

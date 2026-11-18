@@ -103,12 +103,13 @@ public struct Engine: Sendable {
         }
 
         // Resolver files close the HTTPS-record gap for the most visited
-        // domains. A failure here never undoes the hosts block above.
-        let resolverSignature = try? FileSignature(of: paths.resolverDirectory)
-        if !cache.verifiedResolver(signature: resolverSignature, blockID: desired.id) {
+        // domains. A failure here never undoes the hosts block above. When
+        // nothing changed, this costs one `lstat` per file.
+        let wantedResolver = desired.resolverDomains
+        if !cache.resolverUnchanged(directory: paths.resolverDirectory, wanted: wantedResolver, blockID: desired.id) {
             do {
-                let result = try ResolverFiles.sync(
-                    directory: paths.resolverDirectory, wanted: desired.resolverDomains,
+                let (result, snapshot) = try ResolverFiles.sync(
+                    directory: paths.resolverDirectory, wanted: wantedResolver,
                     owner: paths.owner, group: paths.group
                 )
                 report.warnings += result.warnings
@@ -116,8 +117,13 @@ public struct Engine: Sendable {
                     report.resolverFilesChanged = true
                     afterHostsChange()
                 }
-                cache.setVerifiedResolver(signature: try? FileSignature(of: paths.resolverDirectory), blockID: desired.id)
+                if result.warnings.isEmpty {
+                    cache.setResolver(snapshot: snapshot, blockID: desired.id)
+                } else {
+                    cache.clearResolver() // try again next tick
+                }
             } catch {
+                cache.clearResolver()
                 report.warnings.append("Resolver files not updated: \(error.localizedDescription)")
             }
         }
@@ -264,6 +270,9 @@ public struct Engine: Sendable {
             guard current.canUninstall else {
                 throw MastboundError.notAllowed("A commitment is running. Mastbound cannot be removed until it ends.")
             }
+            // Resolver files first: if one cannot be removed, nothing else is
+            // removed and the uninstall stops.
+            if try ResolverFiles.removeAll(directory: paths.resolverDirectory) { afterHostsChange() }
             let rendered = try HostsSection.render(existing: hosts.text, blockedDomains: [])
             if rendered != hosts.text {
                 try FileStore.writeAtomically(
@@ -272,7 +281,6 @@ public struct Engine: Sendable {
                 )
                 afterHostsChange()
             }
-            if try ResolverFiles.removeAll(directory: paths.resolverDirectory) { afterHostsChange() }
             for file in [paths.lockedListFile, paths.stateFile, paths.statusFile] {
                 try removeIfPresent(file)
             }

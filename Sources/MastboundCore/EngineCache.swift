@@ -39,7 +39,7 @@ final class EngineCache: @unchecked Sendable {
     private var unionDomains: [String] = []
     private var unionResolverDomains: [String] = []
     private var hosts: (signature: FileSignature, blockID: String)?
-    private var resolver: (signature: FileSignature?, blockID: String)?
+    private var resolver: (snapshot: ResolverFiles.Snapshot, blockID: String)?
 
     func list(path: String, signature: FileSignature) -> Blocklist? {
         lock.withLock { lists[path].flatMap { $0.signature == signature ? $0.list : nil } }
@@ -57,14 +57,19 @@ final class EngineCache: @unchecked Sendable {
         lock.withLock { unionID = id; unionDomains = domains; unionResolverDomains = resolverDomains }
     }
 
-    /// The resolver folder is checked again when its own signature changes
-    /// (a file added, removed or renamed) or the wanted block changes.
-    func verifiedResolver(signature: FileSignature?, blockID: String) -> Bool {
-        lock.withLock { resolver.map { $0.signature == signature && $0.blockID == blockID } ?? false }
+    /// True when the resolver files are exactly as the last sync left them
+    /// for this block: same folder signature and same signature per file.
+    func resolverUnchanged(directory: URL, wanted: [String], blockID: String) -> Bool {
+        guard let saved = lock.withLock({ resolver }), saved.blockID == blockID else { return false }
+        return ResolverFiles.isUnchanged(directory: directory, wanted: wanted, snapshot: saved.snapshot)
     }
 
-    func setVerifiedResolver(signature: FileSignature?, blockID: String) {
-        lock.withLock { resolver = (signature, blockID) }
+    func setResolver(snapshot: ResolverFiles.Snapshot, blockID: String) {
+        lock.withLock { resolver = (snapshot, blockID) }
+    }
+
+    func clearResolver() {
+        lock.withLock { resolver = nil }
     }
 
     func verifiedHosts(signature: FileSignature, blockID: String) -> Bool {
