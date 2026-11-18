@@ -14,7 +14,7 @@ impossible to undo.** An administrator of a Mac can always remove it. Read
 
 ## Status
 
-Version 0.1.0, the first release. It needs macOS 14 or later.
+Version 0.1.1, the first release. It needs macOS 14 or later.
 
 Tested in a macOS VM (see [docs/verification.md](docs/verification.md)):
 restarts, power cuts, clock changes, VM suspend, the full early-end flow with
@@ -24,7 +24,7 @@ itself, VPNs, iCloud Private Relay, and Intel Macs.
 
 ## Install
 
-1. Download `Mastbound-0.1.0.dmg` from
+1. Download `Mastbound-0.1.1.dmg` from
    [Releases](https://github.com/Aperturesurvivor/mastbound/releases).
 2. Open it and drag Mastbound to Applications.
 3. Open Mastbound, choose a duration and click Start. macOS asks for an
