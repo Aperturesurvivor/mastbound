@@ -59,6 +59,10 @@ func printStatus(_ engine: Engine) throws {
     }
     let status = try engine.readStatus()
     print("phase: \(status.phase.rawValue)")
+    if status.phase != .idle, Date().timeIntervalSince(status.updatedAt) > 180 {
+        print("WARNING: the background service is not running. The block stays on, but the commitment cannot end.")
+        print("Turn on \"mastboundd\" in System Settings > General > Login Items & Extensions.")
+    }
     if let remaining = status.remainingSeconds { print("time left: \(format(remaining))") }
     if let recovery = status.recoveryRemainingSeconds { print("recovery clears in: \(format(recovery))") }
     if let quit = status.quitElapsedSeconds { print("early-end flow open for: \(format(quit))") }
@@ -81,9 +85,20 @@ func loadDaemon(_ paths: Paths) throws {
     guard sandbox == nil else { return }
     if daemonIsLoaded() {
         try SystemCommands.run("/bin/launchctl", ["bootout", "system/\(Paths.launchDaemonLabel)"])
+        // bootout returns before launchd has removed the job; a bootstrap
+        // too soon fails with error 5. Wait for the job to go.
+        for _ in 0..<50 where daemonIsLoaded() { usleep(100_000) }
     }
-    let result = try SystemCommands.run("/bin/launchctl", ["bootstrap", "system", paths.launchDaemonPlist.path])
-    guard result.status == 0 else { throw MastboundError.notAllowed("launchctl bootstrap failed: \(result.output)") }
+    var last = ""
+    for attempt in 0..<5 {
+        if attempt > 0 { sleep(1) }
+        let result = try SystemCommands.run("/bin/launchctl", ["bootstrap", "system", paths.launchDaemonPlist.path])
+        if result.status == 0 || daemonIsLoaded() { return }
+        last = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    throw MastboundError.notAllowed(
+        "The Mastbound background service could not start (\(last)). If \"mastboundd\" is off in System Settings > General > Login Items & Extensions, turn it on and try again."
+    )
 }
 
 func install(_ engine: Engine) throws {

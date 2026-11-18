@@ -48,6 +48,7 @@ enum Snapshots {
             ("3-active-last-day", .active(remaining: 5 * 3_600 + 17 * 60 + 33, end: Date().addingTimeInterval(5 * 3_600), quitElapsed: nil)),
             ("4-recovering", .recovering(remaining: 12 * day + 2 * 3_600, recoveryRemaining: 61 * 3_600 + 14 * 60, end: Date().addingTimeInterval(12 * day))),
             ("5-problem", .problem("Mastbound could not read its status. The block, if any, stays on.")),
+            ("5b-service-off", .serviceOff),
         ]
         var all: [(String, Screen, QuitStep?, Bool)] = shots.map { ($0.0, $0.1, nil, false) }
         let open = Screen.active(remaining: 29 * day + 13 * 3_600, end: nil, quitElapsed: 41 * 60)

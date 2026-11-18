@@ -10,6 +10,9 @@ enum Screen: Equatable {
     case active(remaining: Double, end: Date?, quitElapsed: Double?)
     case recovering(remaining: Double, recoveryRemaining: Double, end: Date?)
     case problem(String)
+    /// A commitment runs, but the daemon has stopped writing its status, for
+    /// example because "mastboundd" was turned off in Login Items.
+    case serviceOff
 }
 
 /// Runs privileged `mastboundctl` commands. The real one asks for the admin
@@ -44,6 +47,12 @@ final class AppModel {
     private var report: StatusReport?
     private let runner: CommandRunner
     let isDemo: Bool
+    /// When the app first saw an old status during a commitment. A short
+    /// gap (for example just after a wake) does not count.
+    private var staleSince: Date?
+    /// The daemon saves at least once a minute while a commitment runs.
+    static let staleAfterSeconds: Double = 180
+    static let staleGraceSeconds: Double = 20
 
     init(runner: CommandRunner, isDemo: Bool) {
         self.runner = runner
@@ -74,6 +83,16 @@ final class AppModel {
         guard let report else { screen = .idle(lastEnd: nil); return }
         // status.json is written by the daemon, at most a few seconds old.
         let age = max(0, Date().timeIntervalSince(report.updatedAt)) + Date().timeIntervalSince(readAt)
+        if report.phase != .idle, Date().timeIntervalSince(report.updatedAt) > Self.staleAfterSeconds {
+            let since = staleSince ?? Date()
+            staleSince = since
+            if Date().timeIntervalSince(since) >= Self.staleGraceSeconds {
+                screen = .serviceOff
+                return
+            }
+        } else {
+            staleSince = nil
+        }
         switch report.phase {
         case .idle:
             screen = .idle(lastEnd: report.lastEnd)

@@ -1,4 +1,5 @@
 import MastboundCore
+import AppKit
 import SwiftUI
 
 struct RootView: View {
@@ -31,6 +32,8 @@ struct RootView: View {
                     ActiveView(model: model, remaining: remaining, end: end, recoveryRemaining: recovery, quitElapsed: nil)
                 case .problem(let message):
                     ProblemView(message: message)
+                case .serviceOff:
+                    ServiceOffView()
                 }
             }
             .padding(.horizontal, 28)
@@ -403,6 +406,32 @@ private struct AddTimeRow: View {
 }
 
 // MARK: - Problem
+
+/// The daemon is off. The block stays in /etc/hosts, but nothing can end it.
+private struct ServiceOffView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 26, weight: .light))
+                .foregroundStyle(Theme.textSecondary)
+            Text("Mastbound's background service is off.")
+                .font(.system(size: 15, weight: .semibold))
+            Text("The block stays on. The commitment cannot end until you turn on \u{201C}mastboundd\u{201D} in Login Items.")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button("Open Login Items") {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+        }
+    }
+}
 
 private struct ProblemView: View {
     let message: String

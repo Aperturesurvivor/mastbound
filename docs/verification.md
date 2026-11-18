@@ -222,3 +222,38 @@ secure DNS settings do not get around the block.
 
 **Not covered:** Safari itself (no network log; it uses the system resolver,
 which returns `0.0.0.0`), a VPN, iCloud Private Relay, and other browsers.
+
+## Login Items switch — 2026-11-18
+
+macOS lists the daemon as `mastboundd` under System Settings > General >
+Login Items & Extensions > App Background Activity. Tested in the VM with a
+30-minute test commitment.
+
+| Check | Result |
+| --- | --- |
+| Turning the switch off asks for an administrator password | PASS |
+| After it is off: launchd removes the job at once; the block stays (63,312 lines) | PASS |
+| Reboot with the switch off: the daemon stays off; the block stays | PASS |
+| The app shows "Mastbound's background service is off" (new) | PASS |
+| "Open Login Items" opens the right page | PASS |
+| `mastboundctl status` prints the same warning (new) | PASS |
+| Switch on again: the daemon runs; the off time (about 8 minutes, with a reboot) is credited; the end time did not move | PASS |
+| `mastboundctl install` 8 times in a row during a commitment (fix below) | PASS, 8/8 |
+
+**Result.** The switch does not remove the block. While it is off, nothing can
+end the commitment, so the block stays until the switch is on again. An
+administrator who turns it off can then edit `/etc/hosts` by hand; this is
+the same documented limit as `launchctl bootout` (S9), with an easier way in.
+
+**Fixes.**
+- The app shows the service-off screen when a commitment runs and
+  `status.json` is more than 3 minutes old for at least 20 seconds (the
+  daemon saves at least once a minute). The grace time stops a flash after a
+  wake. Snapshot: `docs/ui-draft/5b-service-off.png`.
+- `mastboundctl install` (also run by `start`) did a `bootstrap` right after
+  `bootout`. launchd had not removed the job yet, and the bootstrap failed
+  with error 5, which left the daemon off. It now waits for the job to go and
+  tries the bootstrap up to 5 times. The last error names the Login Items
+  switch.
+
+**Not verified:** the new error text when the switch is off during `start`.
