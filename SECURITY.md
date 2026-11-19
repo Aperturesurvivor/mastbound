@@ -12,26 +12,36 @@ repository-wide security rules:
 4. `/etc/hosts` edits are atomic (random temp file, `fsync`, `rename`, folder
    `fsync`) and change only the exact `MASTBOUND` marker section. Damaged
    markers stop the write.
-5. The state file is root-owned, mode `0600`. Only `status.json` (phase and
+5. Forced SafeSearch addresses are fixed in the code (`SafeSearch.swift`),
+   never looked up at run time, because a lookup can be answered by a DNS
+   server the user controls. Each address is checked by
+   `script/check-safesearch.sh`; `release.sh` refuses a release if one
+   fails. IPv6 for those names is always `::`.
+6. Resolver files in `/etc/resolver` are written atomically (temp file,
+   `fsync`, `rename`). A file with another name is changed or removed only
+   if it starts with Mastbound's marker, so a VPN's files are never touched.
+   The folder must be root-owned and not writable by others. Names under
+   `.local`, `.arpa`, `ts.net` and other local suffixes never get a file.
+7. The state file is root-owned, mode `0600`. Only `status.json` (phase and
    end date) is readable by other users.
-6. A missing, damaged or unreadable state or list keeps the current block
+8. A missing, damaged or unreadable state or list keeps the current block
    (fail closed).
-7. The shipped list is checked against a pinned SHA-256 before install and
+9. The shipped list is checked against a pinned SHA-256 before install and
    each time the daemon sees the file change. Changing the list is a code-review action.
-8. The installer refuses source files that are not Mach-O executables, and
+10. The installer refuses source files that are not Mach-O executables, and
    refuses target folders that other users can write.
-9. The install source folder, every folder above it, and its files must be
+11. The install source folder, every folder above it, and its files must be
    owned by root and not writable by other users, because root copies and
    runs `mastboundd` from it (`Installer.requireTrustedSource`).
-10. `/Library/Application Support/Mastbound/requests/` is root-owned, mode
+12. `/Library/Application Support/Mastbound/requests/` is root-owned, mode
     `1777`. Any user may create `cancel-recovery` there. The daemon only
     checks that the name exists and `unlink`s it; it never opens or follows
     it. The request can only cancel an early end (an open app flow or the
     72-hour wait), which keeps the block on.
-11. The 1-hour minimum of the app's early-end flow is checked by the root
+13. The 1-hour minimum of the app's early-end flow is checked by the root
     daemon from credited time (`EngineState.finishingQuit`), never by the
     app. The app's puzzles are friction only.
-12. Public release is blocked until the open checks in
+14. Public release is blocked until the open checks in
     `docs/verification.md` pass.
 
 Report suspected vulnerabilities privately through a

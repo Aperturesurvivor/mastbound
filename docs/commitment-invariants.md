@@ -1,7 +1,8 @@
 # Mastbound commitment: current behavior and target invariants
 
-Status: step 1 of `to-do.md`. Written 2026-11-10 from commit `7c36c79`.
-Nothing in this document has been implemented yet. Items marked
+Status: historical. Written 2026-11-10 from commit `7c36c79`, before the
+rewrite. For the current design see the README, `SECURITY.md` and
+`docs/verification.md`. Items marked
 **DECISION** need Josiah's choice before step 2.
 
 ## 1. What the code does now
