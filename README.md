@@ -4,7 +4,7 @@
 
 Mastbound is a free, open-source commitment blocker for the Mac. It ships
 with a list of adult websites. You choose how long the block lasts, from one
-hour to one year. The block then stays on until that time is over, even if
+day to one year (one hour at least from Terminal). The block then stays on until that time is over, even if
 you quit or delete the app or restart the Mac. Ending early takes more than
 an hour of deliberate friction, and then the block stays on for 72 more hours.
 
