@@ -313,3 +313,40 @@ setup at all ("No DNS configuration available"). Mastbound uses 4,000.
 
 **Not covered:** the ~40,000 listed domains outside the top 4,000 can still
 load in Safari through the HTTPS hint.
+
+## Forced SafeSearch (0.1.2) — 2026-11-19
+
+Change: during a commitment the hosts section sends Google's 187 search
+domains (bare and `www.`), `bing.com`, `www.bing.com` and five DuckDuckGo
+search names to each provider's filtering server. IPv6 is `::`. The search
+host names (not the bare domains) also get resolver files.
+
+Address checks on the host Mac (`script/check-safesearch.sh` and by hand):
+
+| Address | Result |
+| --- | --- |
+| 216.239.38.120 (forcesafesearch.google.com) | Published A record; Google sends scripts a page with no results, so it is checked in Safari below |
+| 150.171.28.16, 150.171.27.16 (strict.bing.com) | Filtered: 0 image results for an explicit search |
+| 150.171.29.16, 150.171.30.16 (strict.bing.com's DNS answer at the time) | **Not filtered**: 35 image results |
+| 2620:1ec:33:2::16, 2620:1ec:33:3::16 (strict.bing.com IPv6) | **Not filtered**: 35 image results |
+| 52.149.247.1 (safe.duckduckgo.com) | Filtered: `kp=1` forced |
+
+So the addresses are fixed in the app, not looked up, and IPv6 is always `::`.
+
+VM `mastbound-release`, release build 0.1.2 (5b6b525), real 90-minute commitment:
+
+| Check | Result |
+| --- | --- |
+| Hosts: 374 SafeSearch rows; block rows unchanged | PASS |
+| Resolver files: 4,193 (4,000 top sites, 187 `www.google.*`, 5 Bing and DuckDuckGo, 1 foreign file kept) | PASS |
+| `dscacheutil`: www.google.com, google.de, www.bing.com, duckduckgo.com resolve to the filtering addresses, IPv6 `::` | PASS |
+| Safari, Bing Images, explicit search: "has been filtered", "requires a strict Bing SafeSearch setting", no images | PASS |
+| Safari, DuckDuckGo Images, explicit search: "No images found" | PASS |
+| Safari, google.com/safesearch: "Filtering on", "someone else … controls settings on the network" | PASS |
+| Safari, Google search: Google showed its unusual-traffic check (also for a harmless search), after many scripted test requests from the same network | NOT TESTED |
+| mail, maps, accounts.google.com and YouTube resolve normally, no resolver files | PASS |
+| VM restart: block, files and SafeSearch rows stay | PASS |
+
+Tests: 148 pass, 12 of them new SafeSearch tests (rows, resolver files,
+repair of edited rows and deleted files, the block wins over a redirect,
+removal at the end and at uninstall, bad addresses refused, default on).

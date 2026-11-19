@@ -14,7 +14,10 @@ impossible to undo.** An administrator of a Mac can always remove it. Read
 
 ## Status
 
-Version 0.1.1, the first release. It needs macOS 14 or later.
+Version 0.1.2. It needs macOS 14 or later.
+
+New in 0.1.2: forced SafeSearch on Google, Bing and DuckDuckGo during a
+commitment, so their image results are filtered too.
 
 Tested in a macOS VM (see [docs/verification.md](docs/verification.md)):
 restarts, power cuts, clock changes, VM suspend, the full early-end flow with
@@ -52,6 +55,10 @@ does not remove the service or the block.
 - A small root service (`mastboundd`) runs under `launchd`. Every 5 seconds
   it makes one marked section of `/etc/hosts` match the commitment. If
   someone edits that section, the service puts it back.
+- The same section turns on forced SafeSearch: Google, Bing and DuckDuckGo
+  search names point to each provider's filtering server, which removes
+  explicit results, images included. The page and account settings cannot
+  turn it off.
 - The service and its files live in root-owned folders, not inside the app.
   Deleting the app does not stop the block.
 - Time is counted with the Mac's monotonic clock. Changing the date or time
@@ -70,7 +77,7 @@ Files:
 | `/Library/Application Support/Mastbound/status.json` | Phase and end date, readable by everyone |
 | `/Library/LaunchDaemons/com.josiahwilson.mastbound.plist` | The `launchd` job |
 | `/etc/hosts` | One section between `# BEGIN MASTBOUND — MANAGED BLOCK` and `# END MASTBOUND — MANAGED BLOCK` |
-| `/etc/resolver/` | One file per top site, each starting with `# Mastbound: managed file` |
+| `/etc/resolver/` | One file per top site and per search host name, each starting with `# Mastbound: managed file` |
 
 ## Commands
 
@@ -156,6 +163,11 @@ commitment, so a clock change does not skip them.
   for the 4,000 most visited listed sites (ranked by the Tranco list) with
   files in `/etc/resolver`. macOS fails with more than about 6,000 such
   files, so the other, rarely visited listed sites can still load in Safari.
+- Forced SafeSearch covers Google, Bing and DuckDuckGo only. Other search
+  sites (for example Brave Search, Startpage or Yandex) are not filtered.
+  SafeSearch filters most explicit results, not all. The filtering addresses
+  are fixed in each release; if a provider moves one, that search site stops
+  loading until the next release.
 - The list is not complete and can block a site by mistake. No list can
   find every adult site.
 - It does not work on iPhone or iPad.
