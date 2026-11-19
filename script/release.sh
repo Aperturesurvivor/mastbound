@@ -27,6 +27,7 @@ IDENTITY="${IDENTITY:-Developer ID Application: Josiah Wilson (TXWB2TUKP2)}"
 PROFILE="${PROFILE:-mastbound}"
 
 script/test.sh >/dev/null
+script/check-safesearch.sh || { echo "refusing: a SafeSearch address no longer filters (see Sources/MastboundCore/SafeSearch.swift)" >&2; exit 1; }
 script/build-app.sh >/dev/null
 APP="$ROOT_DIR/dist/Mastbound.app"
 VERSION="$(/usr/bin/plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")"

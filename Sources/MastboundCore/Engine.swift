@@ -19,6 +19,8 @@ public struct Engine: Sendable {
     /// a resolver file (see `ResolverFiles`).
     public let resolverRanking: [String]
     public let resolverLimit: Int
+    /// Forced SafeSearch rows, written while a commitment runs.
+    public let safeSearch: [HostsRedirect]
     /// Per-engine memory of checked files. The daemon keeps one engine for
     /// its whole life; each `mastboundctl` run starts with an empty cache.
     let cache = EngineCache()
@@ -35,8 +37,10 @@ public struct Engine: Sendable {
         clock: @escaping @Sendable () throws -> ClockReading,
         afterHostsChange: @escaping @Sendable () -> Void = {},
         resolverRanking: [String] = ResolverRanking.domains,
-        resolverLimit: Int = ResolverFiles.limit
+        resolverLimit: Int = ResolverFiles.limit,
+        safeSearch: [HostsRedirect] = SafeSearch.redirects
     ) {
+        self.safeSearch = safeSearch
         self.resolverRanking = resolverRanking
         self.resolverLimit = resolverLimit
         self.paths = paths
@@ -90,7 +94,7 @@ public struct Engine: Sendable {
         // edit or replacement of the file changes its signature (repair check).
         if cache.verifiedHosts(signature: hostsSignature, blockID: desired.id) == false {
             let hosts = try readHosts()
-            let rendered = try HostsSection.render(existing: hosts.text, blockedDomains: desired.domains)
+            let rendered = try HostsSection.render(existing: hosts.text, blockedDomains: desired.domains, redirects: desired.redirects)
             if rendered != hosts.text {
                 try FileStore.writeAtomically(
                     Data(rendered.utf8), to: paths.hostsFile,
@@ -138,8 +142,9 @@ public struct Engine: Sendable {
         /// Changes whenever the set of domains changes.
         var id: String
         var domains: [String]
-        /// The subset that also gets a resolver file.
+        /// The blocked domains and SafeSearch names that also get a resolver file.
         var resolverDomains: [String]
+        var redirects: [HostsRedirect] = []
         static let none = DesiredBlock(id: "none", domains: [], resolverDomains: [])
     }
 
@@ -165,12 +170,14 @@ public struct Engine: Sendable {
         }
         let id = Set(lists.map(\.sha256)).sorted().joined(separator: "+")
         if let cached = cache.union(id: id) {
-            return DesiredBlock(id: id, domains: cached.domains, resolverDomains: cached.resolverDomains)
+            return DesiredBlock(id: id, domains: cached.domains, resolverDomains: cached.resolverDomains, redirects: safeSearch)
         }
         let domains = try Enforcement.blockedDomains(for: state, lists: lists.map(\.domains))
-        let resolverDomains = ResolverFiles.wanted(ranking: resolverRanking, blocked: Set(domains), limit: resolverLimit)
+        let blocked = Set(domains)
+        let resolverDomains = ResolverFiles.wanted(ranking: resolverRanking, blocked: blocked, limit: resolverLimit)
+            + SafeSearch.resolverNames(for: safeSearch).filter { !blocked.contains($0) }
         cache.setUnion(id: id, domains: domains, resolverDomains: resolverDomains)
-        return DesiredBlock(id: id, domains: domains, resolverDomains: resolverDomains)
+        return DesiredBlock(id: id, domains: domains, resolverDomains: resolverDomains, redirects: safeSearch)
     }
 
     /// Reads and checks a list, or returns the cached copy if the file has

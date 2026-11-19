@@ -59,10 +59,12 @@ struct Fixture {
 
     /// A new engine, as after a daemon restart. `listSHA` can be changed to
     /// act as a newer build.
-    func engine(listSHA: String? = nil) -> Engine {
+    /// SafeSearch is off unless a test asks for it (see SafeSearchTests).
+    func engine(listSHA: String? = nil, safeSearch: [HostsRedirect] = []) -> Engine {
         let clock = self.clock, flushes = self.flushes
         return Engine(paths: paths, bundledListSHA256: listSHA ?? self.listSHA,
-                      clock: { clock.now() }, afterHostsChange: { flushes.increment() })
+                      clock: { clock.now() }, afterHostsChange: { flushes.increment() },
+                      safeSearch: safeSearch)
     }
 
     func hosts() throws -> String { try String(contentsOf: paths.hostsFile, encoding: .utf8) }

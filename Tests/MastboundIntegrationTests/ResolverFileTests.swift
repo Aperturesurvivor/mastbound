@@ -11,7 +11,7 @@ private extension Fixture {
         let clock = self.clock, flushes = self.flushes
         return Engine(paths: paths, bundledListSHA256: listSHA,
                       clock: { clock.now() }, afterHostsChange: { flushes.increment() },
-                      resolverRanking: rank ?? ranking, resolverLimit: limit)
+                      resolverRanking: rank ?? ranking, resolverLimit: limit, safeSearch: [])
     }
     var resolverDir: URL { paths.resolverDirectory }
     func resolverFile(_ name: String) -> URL { resolverDir.appendingPathComponent(name) }
