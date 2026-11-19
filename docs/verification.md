@@ -345,6 +345,7 @@ VM `mastbound-release`, release build 0.1.2 (5b6b525), real 90-minute commitment
 | Safari, google.com/safesearch: "Filtering on", "someone else … controls settings on the network" | PASS |
 | Safari, Google search: Google showed its unusual-traffic check (also for a harmless search), after many scripted test requests from the same network | NOT TESTED |
 | mail, maps, accounts.google.com and YouTube resolve normally, no resolver files | PASS |
+| Josiah's Mac, notarized 0.1.2 DMG (SHA-256 b4706e5d…), Safari, Google Images, explicit search: no explicit nudity; suggestive results (lingerie, implied nudity, art, medical drawings) still shown. This is the limit of Google's SafeSearch | PASS |
 | VM restart: block, files and SafeSearch rows stay | PASS |
 
 Tests: 148 pass, 12 of them new SafeSearch tests (rows, resolver files,
