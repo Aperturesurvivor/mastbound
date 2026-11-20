@@ -96,9 +96,9 @@ trigger in run 7, so the cause is not confirmed. The repeated repair check
 from `mastbound-base` (the Cirrus `macos-tahoe-vanilla` image with a test
 SSH key added by Josiah once; the image has no Tart guest agent). Test build.
 
-`mastbound-base` was deleted on 2026-11-16 to free 24 GB. To make it again:
-`tart clone ghcr.io/cirruslabs/macos-tahoe-vanilla:latest mastbound-base`,
-start it once, and run `ssh-copy-id -i ~/.ssh/mastbound_vm admin@$(tart ip mastbound-base)`.
+`mastbound-base` and `mastbound-release` were deleted on 2026-11-20 to free
+52 GB. To make the base again, run `script/p3/make-base-vm.sh` (it downloads
+the image, about 25 GB, and asks once for the VM's password).
 
 | # | Check | Result |
 | --- | --- | --- |
